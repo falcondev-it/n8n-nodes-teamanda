@@ -1,15 +1,13 @@
 # n8n-nodes-teamanda
 
-This is an n8n community node. It lets you use _app/service name_ in your n8n workflows.
-
-_App/service name_ is _one or two sentences describing the service this node integrates with_.
+This n8n community node lets workflows read Teamanda employees and scheduling data and
+manage completed time entries through the Teamanda REST API.
 
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/sustainable-use-license/) workflow automation platform.
 
 [Installation](#installation)
 [Operations](#operations)
 [Credentials](#credentials)
-[Compatibility](#compatibility)
 [Usage](#usage)
 [Resources](#resources)
 [Version history](#version-history)
@@ -20,27 +18,33 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 
 ## Operations
 
-_List the operations supported by your node._
+- Employee: Get, Get Many
+- Time Entry: Create, Delete, Get, Get Many
+- Resource: Get, Get Many
+- Resource Booking: Get, Get Many
 
 ## Credentials
 
-_If users need to authenticate with the app/service, provide details here. You should include prerequisites (such as signing up with the service), available authentication methods, and how to set them up._
-
-## Compatibility
-
-_State the minimum n8n version, as well as which versions you test against. You can also include any known version incompatibility issues._
+Create an API key in Teamanda and enter it in the Teamanda API credential. The credential
+sends the key through the `X-API-Key` header. The default API URL is
+`https://api.teamanda.de/v1`; it can be changed for another Teamanda deployment.
 
 ## Usage
 
-_This is an optional section. Use it to help users with any difficult or confusing aspects of the node._
+Teamanda list operations support `Return All`, pagination, and their resource-specific
+filters. Deleting a time entry archives it. Creating a time entry is not idempotent, so do
+not automatically retry it after an ambiguous timeout.
 
-_By the time users are looking for community nodes, they probably already know n8n basics. But if you expect new users, you can link to the [Try it out](https://docs.n8n.io/try-it-out/) documentation to help them get started._
+The checked-in API types are generated from Teamanda's OpenAPI document. Maintainers can
+refresh them with `pnpm api:update`; normal builds do not require network access. Every
+request routing refers to its operation through the generated types, so an endpoint or
+parameter that Teamanda renames fails the build.
 
 ## Resources
 
-* [n8n community nodes documentation](https://docs.n8n.io/integrations/#community-nodes)
-* _Link to app/service documentation._
+- [n8n community nodes documentation](https://docs.n8n.io/integrations/#community-nodes)
+- [Teamanda API documentation](https://api.teamanda.de/v1/docs)
 
 ## Version history
 
-_This is another optional section. If your node has multiple versions, include a short description of available versions and what changed, as well as any compatibility impact._
+- 0.1.0: Initial Teamanda community node.
