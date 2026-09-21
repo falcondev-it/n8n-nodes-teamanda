@@ -19,7 +19,7 @@ export class Teamanda implements INodeType {
 		outputs: [NodeConnectionTypes.Main],
 		credentials: [{ name: 'teamandaApi', required: true }],
 		requestDefaults: {
-			baseURL: 'https://api.teamanda.de/v1',
+			baseURL: '={{$credentials.baseUrl}}',
 			headers: {
 				Accept: 'application/json',
 				'Content-Type': 'application/json',

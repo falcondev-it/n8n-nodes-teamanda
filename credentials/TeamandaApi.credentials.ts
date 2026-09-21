@@ -18,6 +18,14 @@ export class TeamandaApi implements ICredentialType {
 
 	properties: INodeProperties[] = [
 		{
+			displayName: 'Base URL',
+			name: 'baseUrl',
+			type: 'string',
+			default: 'https://api.teamanda.de/v1',
+			required: true,
+			description: 'Base URL of the Teamanda API',
+		},
+		{
 			displayName: 'API Key',
 			name: 'apiKey',
 			type: 'string',
@@ -38,7 +46,7 @@ export class TeamandaApi implements ICredentialType {
 
 	test: ICredentialTestRequest = {
 		request: {
-			baseURL: 'https://api.teamanda.de/v1',
+			baseURL: '={{$credentials.baseUrl}}',
 			url: '/employees?limit=1',
 		},
 	};
