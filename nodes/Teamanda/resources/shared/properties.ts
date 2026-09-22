@@ -9,13 +9,15 @@ export type ResourceSpec = {
 	resource: ResourceName;
 	/** Collection path, e.g. `/employees`. */
 	path: string;
-	/** Singular display noun, e.g. `employee`. */
+	/** Singular display noun, e.g. `Mitarbeiter`. */
 	noun: string;
-	/** Plural display noun, e.g. `employees`. */
+	/** Plural display noun, e.g. `Mitarbeiter`. */
 	nounPlural: string;
 	/** Parameter holding the record's UUID, e.g. `employeeId`. */
 	idParameter: string;
 	idDisplayName: string;
+	/** Description of the ID field, e.g. `UUID des Mitarbeiters`. */
+	idDescription: string;
 	/** Operations on top of Get and Get Many. */
 	extraOperations?: INodePropertyOptions[];
 	/** Operations the ID field is shown for. Defaults to Get alone. */
@@ -24,14 +26,13 @@ export type ResourceSpec = {
 
 /** Both list endpoints that can be sorted by start date share these labels. */
 export const startDateSortLabels = {
-	startDate: 'Start Date (Ascending)',
-	'-startDate': 'Start Date (Descending)',
+	startDate: 'Startdatum (Aufsteigend)',
+	'-startDate': 'Startdatum (Absteigend)',
 };
 
 /** Get, Get Many, the record ID, and the Return All / Limit pair. */
 export function resourceProperties(spec: ResourceSpec): INodeProperties[] {
 	const { resource, path, noun, nounPlural, idParameter } = spec;
-	const article = /^[aeiou]/.test(noun) ? 'an' : 'a';
 	const forGetMany = { operation: ['getAll'], resource: [resource] };
 
 	return [
@@ -44,17 +45,18 @@ export function resourceProperties(spec: ResourceSpec): INodeProperties[] {
 			options: (
 				[
 					{
-						name: 'Get',
+						name: 'Abrufen',
 						value: 'get',
-						action: `Get ${article} ${noun}`,
-						description: `Get a single ${noun}`,
+						action: `${noun} abrufen`,
+						description: `${noun} abrufen`,
 						routing: { request: { method: 'GET', url: `=${path}/{{$parameter.${idParameter}}}` } },
 					},
 					{
-						name: 'Get Many',
+						// eslint-disable-next-line n8n-nodes-base/node-param-option-name-wrong-for-get-many -- labels are German
+						name: 'Mehrere Abrufen',
 						value: 'getAll',
-						action: `Get many ${nounPlural}`,
-						description: `Get many ${nounPlural}`,
+						action: `Mehrere ${nounPlural} abrufen`,
+						description: `Mehrere ${nounPlural} abrufen`,
 						routing: {
 							request: { method: 'GET', url: path },
 							// Lists answer `{ items, hasMore }`; emit one n8n item per record instead.
@@ -88,15 +90,17 @@ export function resourceProperties(spec: ResourceSpec): INodeProperties[] {
 			required: true,
 			default: '',
 			displayOptions: { show: { operation: spec.idOperations ?? ['get'], resource: [resource] } },
-			description: `UUID of the ${noun}`,
+			description: spec.idDescription,
 		},
 		{
-			displayName: 'Return All',
+			displayName: 'Alle Zurückgeben',
 			name: 'returnAll',
 			type: 'boolean',
 			displayOptions: { show: forGetMany },
 			default: false,
-			description: 'Whether to return all results or only up to a given limit',
+			/* eslint-disable-next-line n8n-nodes-base/node-param-description-boolean-without-whether,
+			   n8n-nodes-base/node-param-description-wrong-for-return-all -- labels are German */
+			description: 'Ob alle Ergebnisse zurückgegeben werden oder nur bis zu einem Limit',
 			routing: { send: { paginate: '={{ $value }}' } },
 		},
 		{
@@ -106,7 +110,8 @@ export function resourceProperties(spec: ResourceSpec): INodeProperties[] {
 			displayOptions: { show: { ...forGetMany, returnAll: [false] } },
 			typeOptions: { minValue: 1, maxValue: PAGE_SIZE },
 			default: 50,
-			description: 'Max number of results to return',
+			// eslint-disable-next-line n8n-nodes-base/node-param-description-wrong-for-limit -- labels are German
+			description: 'Maximale Anzahl der zurückzugebenden Ergebnisse',
 			routing: { send: { type: 'query', property: 'limit' } },
 		},
 	];
@@ -118,10 +123,10 @@ export function filterProperties(
 	options: INodeProperties[],
 ): INodeProperties {
 	return {
-		displayName: 'Filters',
+		displayName: 'Filter',
 		name: 'filters',
 		type: 'collection',
-		placeholder: 'Add Filter',
+		placeholder: 'Filter hinzufügen',
 		default: {},
 		displayOptions: { show: { operation: ['getAll'], resource: [resource] } },
 		options,

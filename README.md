@@ -18,10 +18,12 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 
 ## Operations
 
-- Employee: Get, Get Many
-- Time Entry: Create, Delete, Get, Get Many
-- Resource: Get, Get Many
-- Resource Booking: Get, Get Many
+The node's interface is German.
+
+- Mitarbeiter (employee): Abrufen, Mehrere Abrufen
+- Zeiteintrag (time entry): Erstellen, Löschen, Abrufen, Mehrere Abrufen
+- Ressource (resource): Abrufen, Mehrere Abrufen
+- Ressourcenbuchung (resource booking): Abrufen, Mehrere Abrufen
 
 ## Credentials
 
@@ -31,7 +33,7 @@ sends the key through the `X-API-Key` header. The default API URL is
 
 ## Usage
 
-Teamanda list operations support `Return All`, pagination, and their resource-specific
+Teamanda list operations support `Alle Zurückgeben`, pagination, and their resource-specific
 filters. Deleting a time entry archives it. Creating a time entry is not idempotent, so do
 not automatically retry it after an ambiguous timeout.
 

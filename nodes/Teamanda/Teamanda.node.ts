@@ -12,7 +12,7 @@ export class Teamanda implements INodeType {
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
-		description: 'Interact with the Teamanda API',
+		description: 'Mit der Teamanda-API interagieren',
 		defaults: {
 			name: 'Teamanda',
 		},
@@ -31,25 +31,25 @@ export class Teamanda implements INodeType {
 		},
 		properties: [
 			{
-				displayName: 'Resource',
+				displayName: 'Ressource',
 				name: 'resource',
 				type: 'options',
 				noDataExpression: true,
 				options: [
 					{
-						name: 'Employee',
+						name: 'Mitarbeiter',
 						value: 'employee',
 					},
 					{
-						name: 'Resource',
+						name: 'Ressource',
 						value: 'resource',
 					},
 					{
-						name: 'Resource Booking',
+						name: 'Ressourcenbuchung',
 						value: 'resourceBooking',
 					},
 					{
-						name: 'Time Entry',
+						name: 'Zeiteintrag',
 						value: 'timeEntry',
 					},
 				],

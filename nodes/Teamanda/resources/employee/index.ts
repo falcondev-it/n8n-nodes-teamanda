@@ -5,18 +5,20 @@ export const employeeDescription: INodeProperties[] = [
 	...resourceProperties({
 		resource: 'employee',
 		path: '/employees',
-		noun: 'employee',
-		nounPlural: 'employees',
+		noun: 'Mitarbeiter',
+		nounPlural: 'Mitarbeiter',
 		idParameter: 'employeeId',
-		idDisplayName: 'Employee ID',
+		idDisplayName: 'Mitarbeiter-ID',
+		idDescription: 'UUID des Mitarbeiters',
 	}),
 	filterProperties('employee', [
 		{
-			displayName: 'Attribute Filters',
+			displayName: 'Attributfilter',
 			name: 'attributes',
 			type: 'json',
 			default: '{}',
-			description: 'Public employee attributes to match, as a JSON object of strings',
+			description:
+				'Öffentliche Mitarbeiter-Attribute, die übereinstimmen müssen, als JSON-Objekt aus Strings',
 			routing: {
 				// The API declares `attributes` as a deepObject, so send a parsed object and let
 				// n8n serialise it to `attributes[key]=value`.
