@@ -3,6 +3,7 @@
 	"version": "0.1.0",
 	"description": "n8n community node for the Teamanda API",
 	"license": "MIT",
+	"packageManager": "pnpm@11.25.0",
 	"homepage": "https://github.com/falcondev-it/n8n-nodes-teamanda#readme",
 	"keywords": [
 		"n8n-community-node-package"
