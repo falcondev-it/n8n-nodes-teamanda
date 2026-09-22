@@ -17,7 +17,7 @@
 		"url": "https://github.com/falcondev-it/n8n-nodes-teamanda.git"
 	},
 	"scripts": {
-		"api:update": "openapi-typescript https://api.teamanda.de/v1/openapi.json -o nodes/Teamanda/generated/api-types.ts && prettier --write nodes/Teamanda/generated/api-types.ts",
+		"api:update": "openapi-typescript https://api.teamanda.dev/v1/openapi.json -o nodes/Teamanda/generated/api-types.ts && prettier --write nodes/Teamanda/generated/api-types.ts",
 		"build": "n8n-node build",
 		"build:watch": "tsc --watch",
 		"dev": "n8n-node dev",
