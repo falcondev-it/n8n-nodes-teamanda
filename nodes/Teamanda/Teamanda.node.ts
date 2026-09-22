@@ -1,6 +1,8 @@
 import { NodeConnectionTypes, type INodeType, type INodeTypeDescription } from 'n8n-workflow';
-import { userDescription } from './resources/user';
-import { companyDescription } from './resources/company';
+import { employeeDescription } from './resources/employee';
+import { resourceDescription } from './resources/resource';
+import { resourceBookingDescription } from './resources/resourceBooking';
+import { timeEntryDescription } from './resources/timeEntry';
 
 export class Teamanda implements INodeType {
 	description: INodeTypeDescription = {
@@ -10,7 +12,7 @@ export class Teamanda implements INodeType {
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
-		description: 'Interact with the Teamanda API',
+		description: 'Mit der Teamanda-API interagieren',
 		defaults: {
 			name: 'Teamanda',
 		},
@@ -20,6 +22,8 @@ export class Teamanda implements INodeType {
 		credentials: [{ name: 'teamandaApi', required: true }],
 		requestDefaults: {
 			baseURL: '={{$credentials.baseUrl}}',
+			// The API declares its array query parameters as repeated keys, e.g. `userId=a&userId=b`.
+			arrayFormat: 'repeat',
 			headers: {
 				Accept: 'application/json',
 				'Content-Type': 'application/json',
@@ -27,24 +31,34 @@ export class Teamanda implements INodeType {
 		},
 		properties: [
 			{
-				displayName: 'Resource',
+				displayName: 'Ressource',
 				name: 'resource',
 				type: 'options',
 				noDataExpression: true,
 				options: [
 					{
-						name: 'User',
-						value: 'user',
+						name: 'Mitarbeiter',
+						value: 'employee',
 					},
 					{
-						name: 'Company',
-						value: 'company',
+						name: 'Ressource',
+						value: 'resource',
+					},
+					{
+						name: 'Ressourcenbuchung',
+						value: 'resourceBooking',
+					},
+					{
+						name: 'Zeiteintrag',
+						value: 'timeEntry',
 					},
 				],
-				default: 'user',
+				default: 'employee',
 			},
-			...userDescription,
-			...companyDescription,
+			...employeeDescription,
+			...resourceDescription,
+			...resourceBookingDescription,
+			...timeEntryDescription,
 		],
 	};
 }

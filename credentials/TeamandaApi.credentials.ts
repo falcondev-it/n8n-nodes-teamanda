@@ -18,15 +18,15 @@ export class TeamandaApi implements ICredentialType {
 
 	properties: INodeProperties[] = [
 		{
-			displayName: 'Base URL',
+			displayName: 'Basis-URL',
 			name: 'baseUrl',
 			type: 'string',
 			default: 'https://api.teamanda.de/v1',
 			required: true,
-			description: 'Base URL of the Teamanda API',
+			description: 'Basis-URL der Teamanda-API',
 		},
 		{
-			displayName: 'API Key',
+			displayName: 'API-Schlüssel',
 			name: 'apiKey',
 			type: 'string',
 			typeOptions: { password: true },
