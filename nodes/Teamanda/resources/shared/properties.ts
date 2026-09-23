@@ -38,7 +38,7 @@ export type ResourceSpec = {
 		idParameter: string;
 		idDisplayName: string;
 		/** Description of the ID field, e.g. `UUID des Mitarbeiters`. Ignored for a dropdown. */
-		idDescription: string;
+		idDescription?: string;
 		/** Offers the IDs as a dropdown instead of a text field. */
 		idLoadOptionsMethod?: LoadOptionsMethod;
 		/** Operations the ID field is shown for. Defaults to Get alone. */
@@ -93,7 +93,7 @@ export function resourceProperties(spec: ResourceSpec): INodeProperties[] {
 		});
 	}
 
-	const properties: INodeProperties[] = [
+	return [
 		{
 			displayName: 'Operation',
 			name: 'operation',
@@ -103,6 +103,22 @@ export function resourceProperties(spec: ResourceSpec): INodeProperties[] {
 			options: operations.sort((a, b) => a.name.localeCompare(b.name)),
 			default: 'getAll',
 		},
+		...(get
+			? [
+					{
+						displayName: get.idDisplayName,
+						name: get.idParameter,
+						type: 'string' as const,
+						default: '',
+						description: get.idDescription,
+						...(get.idLoadOptionsMethod && dropdown(get.idLoadOptionsMethod)),
+						required: true,
+						displayOptions: {
+							show: { operation: get.idOperations ?? ['get'], resource: [resource] },
+						},
+					},
+				]
+			: []),
 		{
 			displayName: 'Alle Zurückgeben',
 			name: 'returnAll',
@@ -126,19 +142,6 @@ export function resourceProperties(spec: ResourceSpec): INodeProperties[] {
 			routing: { send: { type: 'query', property: 'limit' } },
 		},
 	];
-	if (get) {
-		properties.splice(1, 0, {
-			displayName: get.idDisplayName,
-			name: get.idParameter,
-			type: 'string',
-			default: '',
-			description: get.idDescription,
-			...(get.idLoadOptionsMethod && dropdown(get.idLoadOptionsMethod)),
-			required: true,
-			displayOptions: { show: { operation: get.idOperations ?? ['get'], resource: [resource] } },
-		});
-	}
-	return properties;
 }
 
 /** The Filters collection every Get Many offers. */
@@ -178,15 +181,17 @@ export function multiDropdown(method: LoadOptionsMethod) {
 	};
 }
 
+type OperationWith<K extends string> = {
+	[Id in OperationId]: K extends keyof Query<Id> ? Id : never;
+}[OperationId];
+
 /** The `userId` filter most list endpoints share, offered as an employee dropdown. */
-export function employeesFilter<Id extends OperationId>(
-	property: keyof Query<Id> & string,
-): INodeProperties {
+export function employeesFilter<Id extends OperationWith<'userId'>>(): INodeProperties {
 	return {
 		displayName: 'Mitarbeiter',
-		name: property,
+		name: 'userId',
 		...multiDropdown('getEmployees'),
-		routing: queryRouting<Id>(property),
+		routing: queryRouting<Id>('userId'),
 	};
 }
 
@@ -206,7 +211,7 @@ const sortFieldLabels: Record<SortField, string> = {
 };
 
 /** The Sort filter; the first value is the API default. */
-export function sortFilter<Id extends OperationId>(
+export function sortFilter<Id extends OperationWith<'sort'>>(
 	values: [Sort<Id>, ...Array<Sort<Id>>],
 ): INodeProperties {
 	const options = values.map((value: string) => {
@@ -224,13 +229,9 @@ export function sortFilter<Id extends OperationId>(
 		type: 'options',
 		options: options.sort((a, b) => a.name.localeCompare(b.name)),
 		default: values[0],
-		routing: { send: { type: 'query', property: 'sort' } },
+		routing: queryRouting<Id>('sort'),
 	};
 }
-
-type OperationWith<K extends string> = {
-	[Id in OperationId]: K extends keyof Query<Id> ? Id : never;
-}[OperationId];
 
 export function archivedFilter<Id extends OperationWith<'archived'>>(): INodeProperties {
 	return {

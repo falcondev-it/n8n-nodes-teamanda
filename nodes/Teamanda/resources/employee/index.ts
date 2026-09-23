@@ -24,7 +24,6 @@ export const employeeDescription: INodeProperties[] = [
 			noun: 'Mitarbeiter',
 			idParameter: 'employeeId',
 			idDisplayName: 'Mitarbeiter',
-			idDescription: 'UUID des Mitarbeiters',
 			idLoadOptionsMethod: 'getEmployees',
 			idOperations: ['get', 'getWage'],
 		},

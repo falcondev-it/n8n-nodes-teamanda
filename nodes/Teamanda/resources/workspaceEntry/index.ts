@@ -20,7 +20,7 @@ export const workspaceEntryDescription: INodeProperties[] = [
 	filterProperties('workspaceEntry', [
 		archivedFilter<'listWorkspaceEntries'>(),
 		...windowFilters<'listWorkspaceEntries'>('dateTime'),
-		employeesFilter<'listWorkspaceEntries'>('userId'),
+		employeesFilter<'listWorkspaceEntries'>(),
 		{
 			displayName: 'Arbeitsplätze',
 			name: 'resourceId',

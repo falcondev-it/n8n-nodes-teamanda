@@ -1,35 +1,37 @@
-import type { IDataObject, ILoadOptionsFunctions, INodePropertyOptions } from 'n8n-workflow';
-import { PAGE_SIZE, type Body, type JsonResponse } from './api';
+import type { ILoadOptionsFunctions, INodePropertyOptions } from 'n8n-workflow';
+import { PAGE_SIZE, type Body } from './api';
 import type { paths } from './generated/api-types';
 
 type ListPath = Extract<keyof paths, `/options/${string}` | '/employee-fields'>;
 
-async function fetchAll<T>(
+type Item<P extends ListPath> = paths[P]['get'] extends {
+	responses: { 200: { content: { 'application/json': { items: Array<infer I> } } } };
+}
+	? I
+	: never;
+
+async function fetchAll<P extends ListPath>(
 	context: ILoadOptionsFunctions,
-	path: ListPath,
-	qs: IDataObject = {},
-): Promise<T[]> {
+	path: P,
+): Promise<Array<Item<P>>> {
 	const { baseUrl } = await context.getCredentials<{ baseUrl: string }>('teamandaApi');
-	const items: T[] = [];
+	const items: Array<Item<P>> = [];
 	for (let offset = 0; ; offset += PAGE_SIZE) {
 		const page = (await context.helpers.httpRequestWithAuthentication.call(context, 'teamandaApi', {
 			method: 'GET',
 			baseURL: baseUrl,
 			url: path,
-			qs: { ...qs, limit: PAGE_SIZE, offset },
+			qs: { limit: PAGE_SIZE, offset },
 			json: true,
-		})) as { items: T[]; hasMore: boolean };
+		})) as { items: Array<Item<P>>; hasMore: boolean };
 		items.push(...page.items);
 		if (!page.hasMore) return items;
 	}
 }
 
-type OptionItem = JsonResponse<'listEmployeeOptions'>['items'][number];
-type EmployeeField = JsonResponse<'listEmployeeFields'>['items'][number];
-
 function fromOptionsEndpoint(path: Extract<ListPath, `/options/${string}`>) {
 	return async function (this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-		const items = await fetchAll<OptionItem>(this, path);
+		const items = await fetchAll(this, path);
 		return items.map(({ value, label }) => ({ name: label, value }));
 	};
 }
@@ -52,12 +54,12 @@ export const loadOptions = {
 	getTeams: fromOptionsEndpoint('/options/teams'),
 	getWorkspaces: fromOptionsEndpoint('/options/workspaces'),
 	async getEmployeeFields(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-		const fields = await fetchAll<EmployeeField>(this, '/employee-fields');
+		const fields = await fetchAll(this, '/employee-fields');
 		return fields.map(({ key, label }) => ({ name: label, value: key }));
 	},
 	/** Only the work types the organization has enabled; the API labels them with their raw value. */
 	async getWorkTypes(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-		const items = await fetchAll<OptionItem>(this, '/options/work-types');
+		const items = await fetchAll(this, '/options/work-types');
 		return items
 			.map(({ value, label }) => ({
 				name: workTypeLabels[value as keyof typeof workTypeLabels] ?? label,

@@ -19,7 +19,7 @@ export const dailyReportDescription: INodeProperties[] = [
 		displayOptions: { show: { operation: ['getAll'], resource: ['dailyReport'] } },
 	}),
 	filterProperties('dailyReport', [
-		employeesFilter<'listDailyReports'>('userId'),
+		employeesFilter<'listDailyReports'>(),
 		updatedSinceFilter<'listDailyReports'>(),
 		sortFilter<'listDailyReports'>(['date', '-date']),
 	]),

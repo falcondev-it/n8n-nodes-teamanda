@@ -153,14 +153,14 @@ export const taskDescription: INodeProperties[] = [
 	filterProperties('task', [
 		archivedFilter<'listTasks'>(),
 		{
-			...assigneeField,
 			displayName: 'Zugewiesene Mitarbeiter',
+			name: 'assignedUserId',
 			...multiDropdown('getEmployees'),
 			routing: queryRouting<'listTasks'>('assignedUserId'),
 		},
 		{
-			...categoryField,
 			displayName: 'Kategorien',
+			name: 'categoryId',
 			...multiDropdown('getTaskCategories'),
 			routing: queryRouting<'listTasks'>('categoryId'),
 		},

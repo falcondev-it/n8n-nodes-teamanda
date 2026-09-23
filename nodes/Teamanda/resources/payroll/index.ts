@@ -17,7 +17,7 @@ export const specialPaymentDescription: INodeProperties[] = [
 	filterProperties('specialPayment', [
 		archivedFilter<'listSpecialPayments'>(),
 		...windowFilters<'listSpecialPayments'>('date'),
-		employeesFilter<'listSpecialPayments'>('userId'),
+		employeesFilter<'listSpecialPayments'>(),
 		sortFilter<'listSpecialPayments'>(['-date', 'date']),
 	]),
 ];
@@ -31,7 +31,7 @@ export const overtimePayoutDescription: INodeProperties[] = [
 	filterProperties('overtimePayout', [
 		archivedFilter<'listOvertimePayouts'>(),
 		...windowFilters<'listOvertimePayouts'>('date'),
-		employeesFilter<'listOvertimePayouts'>('userId'),
+		employeesFilter<'listOvertimePayouts'>(),
 		sortFilter<'listOvertimePayouts'>(['-date', 'date']),
 	]),
 ];

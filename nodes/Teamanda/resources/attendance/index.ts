@@ -15,7 +15,7 @@ export const attendanceDescription: INodeProperties[] = [
 		nounPlural: 'Anwesenheiten',
 	}),
 	filterProperties('attendance', [
-		employeesFilter<'listAttendance'>('userId'),
+		employeesFilter<'listAttendance'>(),
 		{
 			displayName: 'Status',
 			name: 'status',

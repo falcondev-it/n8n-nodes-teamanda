@@ -125,7 +125,7 @@ export const timeEntryDescription: INodeProperties[] = [
 	filterProperties('timeEntry', [
 		archivedFilter<'listTimeEntries'>(),
 		...windowFilters<'listTimeEntries'>('dateTime'),
-		employeesFilter<'listTimeEntries'>('userId'),
+		employeesFilter<'listTimeEntries'>(),
 		{
 			displayName: 'Typen',
 			name: 'types',

@@ -51,7 +51,7 @@ export const absenceDescription: INodeProperties[] = [
 	filterProperties('absence', [
 		archivedFilter<'listAbsenceRequests'>(),
 		...windowFilters<'listAbsenceRequests'>('date'),
-		employeesFilter<'listAbsenceRequests'>('userId'),
+		employeesFilter<'listAbsenceRequests'>(),
 		{
 			displayName: 'Status',
 			name: 'status',
