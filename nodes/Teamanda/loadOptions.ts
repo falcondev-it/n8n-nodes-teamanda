@@ -2,7 +2,7 @@ import type { ILoadOptionsFunctions, INodePropertyOptions } from 'n8n-workflow';
 import { PAGE_SIZE, type Body } from './api';
 import type { paths } from './generated/api-types';
 
-type ListPath = Extract<keyof paths, `/options/${string}` | '/employee-fields' | '/resources'>;
+type ListPath = Extract<keyof paths, `/options/${string}` | '/employee-fields'>;
 
 type Item<P extends ListPath> = paths[P]['get'] extends {
 	responses: { 200: { content: { 'application/json': { items: Array<infer I> } } } };
@@ -50,16 +50,12 @@ export const loadOptions = {
 	getCostCenters: fromOptionsEndpoint('/options/cost-centers'),
 	getEmployees: fromOptionsEndpoint('/options/employees'),
 	getProjects: fromOptionsEndpoint('/options/projects'),
+	getResources: fromOptionsEndpoint('/options/workspaces'),
 	getTaskCategories: fromOptionsEndpoint('/options/task-categories'),
 	getTeams: fromOptionsEndpoint('/options/teams'),
 	async getEmployeeFields(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 		const fields = await fetchAll(this, '/employee-fields');
 		return fields.map(({ key, label }) => ({ name: label, value: key }));
-	},
-	/** `/resources` instead of `/options/workspaces`, which leaves out archived resources. */
-	async getResources(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-		const resources = await fetchAll(this, '/resources');
-		return resources.map(({ id, name }) => ({ name, value: id }));
 	},
 	/** Only the work types the organization has enabled; the API labels them with their raw value. */
 	async getWorkTypes(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
