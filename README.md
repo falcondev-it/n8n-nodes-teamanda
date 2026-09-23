@@ -1,52 +1,68 @@
 # n8n-nodes-teamanda
 
-This n8n community node lets workflows read Teamanda employees and scheduling data and
-manage completed time entries through the Teamanda REST API.
+Mit diesem n8n-Community-Node lesen Workflows über die Teamanda-REST-API Mitarbeiter-,
+Abwesenheits-, Anwesenheits-, Lohn-, Formular- und Planungsdaten und verwalten
+Zeiteinträge und Aufgaben.
 
-[n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/sustainable-use-license/) workflow automation platform.
+[n8n](https://n8n.io/) ist eine Workflow-Automatisierungsplattform unter [Fair-Code-Lizenz](https://docs.n8n.io/sustainable-use-license/).
 
 [Installation](#installation)
-[Operations](#operations)
-[Credentials](#credentials)
-[Usage](#usage)
-[Resources](#resources)
-[Version history](#version-history)
+[Operationen](#operationen)
+[Zugangsdaten](#zugangsdaten)
+[Verwendung](#verwendung)
+[Ressourcen](#ressourcen)
+[Versionsverlauf](#versionsverlauf)
 
 ## Installation
 
-Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation.
+Folge der [Installationsanleitung](https://docs.n8n.io/integrations/community-nodes/installation/) in der Dokumentation zu n8n-Community-Nodes.
 
-## Operations
+## Operationen
 
-The node's interface is German.
+- Abwesenheit: Abrufen, Abwesende Abrufen, Mehrere Abrufen
+- Anwesenheit: Mehrere Abrufen
+- Arbeitsplatzbuchung: Mehrere Abrufen
+- Aufgabe: Abrufen, Aktualisieren, Erstellen, Mehrere Abrufen
+- Formulareinreichung: Abrufen, Mehrere Abrufen
+- Mitarbeiter: Abrufen, Lohn Abrufen, Mehrere Abrufen
+- Mitarbeiterfeld: Mehrere Abrufen
+- Ressource: Abrufen, Mehrere Abrufen
+- Ressourcenbuchung: Abrufen, Mehrere Abrufen
+- Sonderzahlung: Mehrere Abrufen
+- Tagesbericht: Mehrere Abrufen
+- Überstundenauszahlung: Mehrere Abrufen
+- Zeiteintrag: Abrufen, Erstellen, Löschen, Mehrere Abrufen
 
-- Mitarbeiter (employee): Abrufen, Mehrere Abrufen
-- Zeiteintrag (time entry): Erstellen, Löschen, Abrufen, Mehrere Abrufen
-- Ressource (resource): Abrufen, Mehrere Abrufen
-- Ressourcenbuchung (resource booking): Abrufen, Mehrere Abrufen
+Mitarbeiter, Teams, Projekte, Kostenstellen, Zeittypen, Ressourcen, Aufgabenkategorien und
+Mitarbeiterfelder stehen als Dropdowns zur Auswahl, die aus der API geladen werden.
 
-## Credentials
+## Zugangsdaten
 
-Create an API key in Teamanda and enter it in the Teamanda API credential. The credential
-sends the key through the `X-API-Key` header. The default API URL is
-`https://api.teamanda.de/v1`; it can be changed for another Teamanda deployment.
+Lege in Teamanda einen API-Schlüssel an und trage ihn in den Zugangsdaten „Teamanda API“
+ein. Der Schlüssel wird im Header `X-API-Key` gesendet. Die Standard-API-URL ist
+`https://api.teamanda.de/v1` und lässt sich für eine andere Teamanda-Instanz ändern. Der
+Verbindungstest ruft `GET /connection` auf und braucht außer einem gültigen Schlüssel keine
+Berechtigung.
 
-## Usage
+## Verwendung
 
-Teamanda list operations support `Alle Zurückgeben`, pagination, and their resource-specific
-filters. Deleting a time entry archives it. Creating a time entry is not idempotent, so do
-not automatically retry it after an ambiguous timeout.
+Listen-Operationen unterstützen `Alle Zurückgeben`, Paginierung und ihre jeweiligen Filter.
+Das Löschen eines Zeiteintrags archiviert ihn. Das Erstellen von Zeiteinträgen und Aufgaben
+ist nicht idempotent, also nach einem unklaren Timeout nicht automatisch wiederholen.
 
-The checked-in API types are generated from Teamanda's OpenAPI document. Maintainers can
-refresh them with `pnpm api:update`; normal builds do not require network access. Every
-request routing refers to its operation through the generated types, so an endpoint or
-parameter that Teamanda renames fails the build.
+Datums- und Zeitwerte ohne Offset werden in der Zeitzone des Workflows gelesen und als UTC
+an die API gesendet.
 
-## Resources
+Die eingecheckten API-Typen werden aus Teamandas OpenAPI-Dokument erzeugt. Maintainer
+aktualisieren sie mit `pnpm api:update`; ein normaler Build braucht keinen Netzwerkzugriff.
+Jedes Request-Routing verweist über die erzeugten Typen auf seine Operation, sodass ein
+Endpoint oder Parameter, den Teamanda umbenennt, den Build scheitern lässt.
 
-- [n8n community nodes documentation](https://docs.n8n.io/integrations/#community-nodes)
-- [Teamanda API documentation](https://api.teamanda.de/v1/docs)
+## Ressourcen
 
-## Version history
+- [Dokumentation zu n8n-Community-Nodes](https://docs.n8n.io/integrations/#community-nodes)
+- [Teamanda-API-Dokumentation](https://api.teamanda.de/v1/docs)
 
-- 0.1.0: Initial Teamanda community node.
+## Versionsverlauf
+
+- 0.1.0: Erste Version des Teamanda-Community-Nodes.

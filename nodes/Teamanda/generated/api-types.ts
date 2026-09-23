@@ -4,6 +4,46 @@
  */
 
 export interface paths {
+	'/connection': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * Describe the current connection
+		 * @description Identifies the API key, its organization, its granted permissions and the organization’s enabled modules. Requires no domain permission, so it is the endpoint to use for a credential test. A `targetTeamIds` of `null` means the grant covers the whole organization.
+		 */
+		get: operations['getConnection'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/employee-fields': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List employee fields
+		 * @description Lists the public employee fields of the organization. `key` is what `GET /employees` returns inside `attributes`, selects through `fields` and filters on through `attributes[key]`. Private fields are never listed. `label` falls back to `key` when the organization has no translation in the requested language.
+		 */
+		get: operations['listEmployeeFields'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 	'/employment-contracts': {
 		parameters: {
 			query?: never;
@@ -53,6 +93,51 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	'/tasks': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List tasks
+		 * @description `updatedSince` filters on `updatedAt >= updatedSince` inclusive.
+		 */
+		get: operations['listTasks'];
+		put?: never;
+		/**
+		 * Create a task
+		 * @description Creates one task on every call and is not idempotent: retrying after a timeout creates a second task. Tasks written through this API are authored by the employee who created the API key, because a task and its status comments have no anonymous author. Revoking that employee does not retroactively change tasks already written. Attachments cannot be sent through this API.
+		 */
+		post: operations['createTask'];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/tasks/{id}': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Get a task */
+		get: operations['getTask'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		/**
+		 * Update a task
+		 * @description Updates only the fields present in the body. A `status` change also records a status comment, as it does in the app. Tasks written through this API are authored by the employee who created the API key, because a task and its status comments have no anonymous author. Revoking that employee does not retroactively change tasks already written.
+		 */
+		patch: operations['updateTask'];
+		trace?: never;
+	};
 	'/time-entries': {
 		parameters: {
 			query?: never;
@@ -60,12 +145,15 @@ export interface paths {
 			path?: never;
 			cookie?: never;
 		};
-		/** List time entries */
+		/**
+		 * List time entries
+		 * @description `updatedSince` filters on `updatedAt >= updatedSince` inclusive. A deleted entry is archived rather than removed, so it stays visible under `archived=true` and an entry archived after it was last read only reappears in an `updatedSince` page when `archived` matches.
+		 */
 		get: operations['listTimeEntries'];
 		put?: never;
 		/**
 		 * Create a time entry
-		 * @description Creates one new time entry on every call. This operation is not idempotent: retrying after a timeout creates a duplicate because no overlap or collision check runs. Retry the complete day-window delete-then-create import instead of one request. Work-time rounding may rewrite the submitted timestamps, so the response contains the stored entry. Configured blocking can cover a shift outside its duty plan with an entry that outranks every work type, removing that shift from the day's work minutes.
+		 * @description Creates one new time entry on every call and is not idempotent: no overlap or collision check runs, so retrying after a timeout creates a duplicate. Retry the complete day-window delete-then-create import instead. Work-time rounding may rewrite the submitted timestamps, so the response contains the stored entry.
 		 */
 		post: operations['createTimeEntry'];
 		delete?: never;
@@ -87,7 +175,7 @@ export interface paths {
 		post?: never;
 		/**
 		 * Delete a time entry
-		 * @description Archives the time entry without deleting its version history. Repeating a successful request is safe and leaves the original archived timestamp unchanged. Calculator-authored entries cannot be deleted through this API.
+		 * @description Archives the time entry without deleting its version history. Repeating a successful request leaves the original archived timestamp unchanged. Calculator-authored entries cannot be deleted through this API.
 		 */
 		delete: operations['deleteTimeEntry'];
 		options?: never;
@@ -102,7 +190,10 @@ export interface paths {
 			path?: never;
 			cookie?: never;
 		};
-		/** List employees */
+		/**
+		 * List employees
+		 * @description `fields` narrows the returned `attributes` map to the named employee fields; unknown or private keys are dropped rather than rejected. `attributes[key]=value` filters on exact equality and must name a public field. `search` matches `displayName` and `fullName` case-insensitively. `updatedSince` filters on `updatedAt >= updatedSince` inclusive and tracks the employee record, not the approval of an individual field value.
+		 */
 		get: operations['listEmployees'];
 		put?: never;
 		post?: never;
@@ -138,7 +229,7 @@ export interface paths {
 		};
 		/**
 		 * List resources
-		 * @description Lists every Ressource of the organization, including archived ones (`archivedAt` set). `updatedSince` filters on `updatedAt >= updatedSince` inclusive, so echoing back the highest `updatedAt` seen re-delivers the boundary rows instead of dropping one written in the same millisecond. It tracks the Ressource itself, never its embedded stubs. The embedded `location` is a snapshot of the Standort at the time of the request; there is no locations collection to re-join against. Renaming a Ressource or Standort does not bump the `updatedAt` of the bookings that embed it.
+		 * @description Lists every Ressource of the organization, including archived ones (`archivedAt` set). `updatedSince` filters on `updatedAt >= updatedSince` inclusive and tracks the Ressource itself, never its embedded stubs. The embedded `location` is a snapshot of the Standort at the time of the request; there is no locations collection to re-join against. Renaming a Ressource or Standort does not bump the `updatedAt` of the bookings that embed it.
 		 */
 		get: operations['listResources'];
 		put?: never;
@@ -178,7 +269,7 @@ export interface paths {
 		};
 		/**
 		 * List resource bookings
-		 * @description Lists the bookings whose assigned employees are all visible to the API key; a booking with any employee outside the key's teams is omitted whole. `from` and `to` select every booking overlapping the window (`startDate < to` and `endDate > from`). `updatedSince` filters on `updatedAt >= updatedSince` inclusive and moves when an employee is added or removed. A cancelled booking is hard-deleted and leaves no tombstone, so `updatedSince` cannot express a deletion: a long-lived sync needs a periodic full resync over its window. `startDate` and `endDate` are UTC instants; convert them against the `timeZone` of the `/resources` row whose `id` matches the embedded `resource.id` to place the booking on a local day. `employees[].userId` re-joins against the `id` of a `/employees` row; `employees: []` means nobody is assigned yet. Renaming a Ressource or an employee shows in the stubs immediately but does not bump the `updatedAt` of the booking. A booking is returned only when every assigned employee is visible to the API key.
+		 * @description Lists the bookings whose assigned employees are all visible to the API key; a booking with any employee outside the key's teams is omitted whole. `from` and `to` select every booking overlapping the window (`startDate < to` and `endDate > from`). `updatedSince` filters on `updatedAt >= updatedSince` inclusive and moves when an employee is added or removed. A cancelled booking is hard-deleted, so `updatedSince` cannot express a deletion and a long-lived sync needs a periodic full resync. `startDate` and `endDate` are UTC instants; convert them against the `timeZone` of the `/resources` row whose `id` matches the embedded `resource.id` to place the booking on a local day. `employees[].userId` re-joins against the `id` of a `/employees` row; `employees: []` means nobody is assigned yet. Renaming a Ressource or an employee shows in the stubs immediately but does not bump the `updatedAt` of the booking. A booking is returned only when every assigned employee is visible to the API key.
 		 */
 		get: operations['listResourceBookings'];
 		put?: never;
@@ -209,14 +300,411 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	'/absences/requests': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List absence requests
+		 * @description Lists the absence requests of the employees this API key may see. A request overlapping the window is included whole, so its `startDate` may precede `from`. `updatedSince` matches a request created since then, or one whose history records an event since then, which is how a status change surfaces. `from` and `to` are calendar dates in the organization’s time zone, not timestamps.
+		 */
+		get: operations['listAbsenceRequests'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/absences/requests/{id}': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Get an absence request */
+		get: operations['getAbsenceRequest'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/absences/absent-users': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List who is away
+		 * @description Lists, per employee, the days in the window covered by an approved or booked absence, with the absence type applying on each. A day split between two types appears once per type. A type is named only for employees covered by `view_absence_requests_for_others`; otherwise `absenceTypeName` is the type’s public stand-in and `isRedacted` is `true`. `from` and `to` are calendar dates in the organization’s time zone, not timestamps.
+		 */
+		get: operations['listAbsentUsers'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/attendance': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List who is present right now
+		 * @description Reports each active employee this API key may see as `working` (a time entry is running), `absent` (an approved or booked absence covers today) or `away` (neither). `since` is the start of the running time entry, `null` for anyone not working. `absenceTypes` lists the absence types covering today, including for someone reported as `working`. A type is named only for employees covered by `view_absence_requests_for_others`; otherwise `name` is the type’s public stand-in and `isRedacted` is `true`.
+		 */
+		get: operations['listAttendance'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/daily-reports': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List daily reports
+		 * @description One row per employee and day, holding the worked, target and balance minutes the time-tracking calculator derived. Reports are recalculated when anything feeding them changes, so `updatedAt` moves without a time entry being edited. A day with no report has never been calculated, which is not the same as a day with no work. `from` and `to` are calendar dates and the window is required.
+		 */
+		get: operations['listDailyReports'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/form-submissions': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List form submissions
+		 * @description Lists filled-in forms, never the templates they were filled in from. `templateId` names the template a submission came from. Field values are not included here; fetch a single submission for those.
+		 */
+		get: operations['listFormSubmissions'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/form-submissions/{id}': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * Get a form submission
+		 * @description Returns the submission together with its top-level field values, in the order the form defines. A relation field reports the referenced id. Values nested in a repeating group, and binary values such as signatures, come back as `null`.
+		 */
+		get: operations['getFormSubmission'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/employees/{userId}/wage': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * Get an employee’s pay rate
+		 * @description Returns the pay rate from the employment contract in force on `date`, which defaults to today. Responds 404 when no contract covers that date.
+		 */
+		get: operations['getEmployeeWage'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/special-payments': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List special payments
+		 * @description One-off payments booked against an employee, such as a bonus. Amounts are whole cents. `date` is the calendar date the payment is booked on, which payroll uses, not the date the row was written.
+		 */
+		get: operations['listSpecialPayments'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/overtime-payouts': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List overtime payouts
+		 * @description Overtime paid out rather than carried forward. A payout with `excludedFromOvertimeBalance` was paid without reducing the employee's overtime balance. Amounts are whole cents. `date` is the calendar date the payment is booked on, which payroll uses, not the date the row was written.
+		 */
+		get: operations['listOvertimePayouts'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/workspace-entries': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List workspace bookings by employee
+		 * @description Lists desk and home-office bookings. A booking is visible only when every employee assigned to it is one this API key may see; an unstaffed booking always is. `userId` narrows to bookings including at least one of the given employees, but the returned `userIds` still lists everyone on the booking.
+		 */
+		get: operations['listWorkspaceEntries'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/options/employees': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List employee options
+		 * @description Lists the employees this API key may see as `{ value, label }` pairs, `value` being the employee id every other endpoint takes as `userId`. Archived employees are left out. `search` matches `displayName` and `fullName` case-insensitively.
+		 */
+		get: operations['listEmployeeOptions'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/options/teams': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List teams options
+		 * @description Lists teams as `{ value, label }` pairs for a dropdown. Archived entries are left out. `search` matches the label case-insensitively.
+		 */
+		get: operations['listTeamOptions'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/options/projects': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List projects options
+		 * @description Lists projects as `{ value, label }` pairs for a dropdown. Archived entries are left out. `search` matches the label case-insensitively.
+		 */
+		get: operations['listProjectOptions'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/options/project-tags': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List project tags options
+		 * @description Lists project tags as `{ value, label }` pairs for a dropdown. Archived entries are left out. `search` matches the label case-insensitively.
+		 */
+		get: operations['listProjectTagOptions'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/options/cost-centers': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List cost centers options
+		 * @description Lists cost centers as `{ value, label }` pairs for a dropdown. Archived entries are left out. `search` matches the label case-insensitively.
+		 */
+		get: operations['listCostCenterOptions'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/options/absence-types': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List absence types options
+		 * @description Lists absence types as `{ value, label }` pairs for a dropdown. Archived entries are left out. `search` matches the label case-insensitively.
+		 */
+		get: operations['listAbsenceTypeOptions'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/options/workspaces': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List workspaces options
+		 * @description Lists workspaces as `{ value, label }` pairs for a dropdown. Archived entries are left out. `search` matches the label case-insensitively. These are the same resources `GET /resources` returns in full.
+		 */
+		get: operations['listWorkspaceOptions'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/options/task-categories': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List task category options
+		 * @description Lists task categories as `{ value, label }` pairs for a dropdown, which is where the `categoryId` `POST /tasks` requires comes from. A task category is never archived. `search` matches the label case-insensitively.
+		 */
+		get: operations['listTaskCategoryOptions'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/options/work-types': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List work type options
+		 * @description Lists the work types the organization has configured, as `{ value, label }` pairs. `value` is the `type` of a time entry. Work types are a fixed vocabulary, so the label is the value and `search` matches that.
+		 */
+		get: operations['listWorkTypeOptions'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 }
 export type webhooks = Record<string, never>;
 export interface components {
 	schemas: {
+		/** UndefinedError */
 		UndefinedError: {
 			/** @constant */
 			defined: false;
-			inferable: boolean;
 			code: string;
 			status: number;
 			message: string;
@@ -231,6 +719,519 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+	getConnection: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description The identity and capabilities behind the presented API key. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						apiVersion: string;
+						apiKey: {
+							/** Format: uuid */
+							id: string;
+							name: string;
+						};
+						organization: {
+							/** Format: uuid */
+							id: string;
+							name: string;
+						};
+						permissions: {
+							/** @enum {string} */
+							key:
+								| 'view_time_entries_for_others'
+								| 'view_attendance_list'
+								| 'view_absence_requests_for_others'
+								| 'view_absent_users'
+								| 'view_user_data_for_others'
+								| 'view_wage_salary_for_others'
+								| 'view_workspace_scheduling_for_others'
+								| 'view_dynamic_form_submissions_for_others'
+								| 'manage_time_entries_for_others'
+								| 'manage_employment_contracts_for_others'
+								| 'manage_task'
+								| 'manage_projects'
+								| 'manage_cost_centers';
+							targetTeamIds: string[] | null;
+						}[];
+						enabledModules: (
+							| 'Base'
+							| 'User'
+							| 'Absence'
+							| 'Workspace'
+							| 'DutyPlan'
+							| 'TimeTracking'
+							| 'Holiday'
+							| 'CompanySite'
+							| 'CostCenter'
+							| 'Project'
+							| 'WageSalary'
+							| 'NewsFeed'
+							| 'AccountingExport'
+							| 'PersonnelFile'
+							| 'Integration'
+							| 'ConstructionRecord'
+							| 'Statistics'
+							| 'DynamicForm'
+							| 'Form'
+							| 'Task'
+							| 'Drive'
+							| 'Ai'
+							| 'Datev'
+						)[];
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listEmployeeFields: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+				language?: 'DE' | 'DE_DU' | 'EN';
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A page of public employee fields. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							key: string;
+							label: string;
+							/** @enum {string} */
+							type:
+								| 'string'
+								| 'string_multiline'
+								| 'number'
+								| 'email'
+								| 'phone'
+								| 'date'
+								| 'children'
+								| 'switch';
+							required: boolean;
+							systemFieldType:
+								| ('master_data' | 'absence' | 'accounting_export' | 'personnel_file')
+								| null;
+						}[];
+						hasMore: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
 	listEmploymentContracts: {
 		parameters: {
 			query?: {
@@ -1749,6 +2750,998 @@ export interface operations {
 			};
 		};
 	};
+	listTasks: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+				status?: ('open' | 'in_progress' | 'blocked' | 'review' | 'completed')[];
+				assignedUserId?: string[];
+				categoryId?: string[];
+				archived?: boolean;
+				updatedSince?: string;
+				sort?: 'taskNumber' | '-taskNumber' | 'updatedAt' | '-updatedAt';
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A page of tasks. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							/** Format: uuid */
+							id: string;
+							taskNumber: number;
+							title: string;
+							description: string | null;
+							/** @enum {string} */
+							status: 'open' | 'in_progress' | 'blocked' | 'review' | 'completed';
+							/** Format: uuid */
+							categoryId: string;
+							/** Format: uuid */
+							assignedUserId: string;
+							/** Format: uuid */
+							authorUserId: string;
+							plannedAt: string | null;
+							archivedAt: string | null;
+							/** Format: date-time */
+							createdAt: string;
+							/** Format: date-time */
+							updatedAt: string;
+						}[];
+						hasMore: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	createTask: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				'application/json': {
+					title: string;
+					description: string | null;
+					/** Format: uuid */
+					categoryId: string;
+					/** Format: uuid */
+					assignedUserId: string;
+					plannedAt: string | null;
+				};
+			};
+		};
+		responses: {
+			/** @description The created task. */
+			201: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Path of the created resource. */
+					Location?: string;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						/** Format: uuid */
+						id: string;
+						taskNumber: number;
+						title: string;
+						description: string | null;
+						/** @enum {string} */
+						status: 'open' | 'in_progress' | 'blocked' | 'review' | 'completed';
+						/** Format: uuid */
+						categoryId: string;
+						/** Format: uuid */
+						assignedUserId: string;
+						/** Format: uuid */
+						authorUserId: string;
+						plannedAt: string | null;
+						archivedAt: string | null;
+						/** Format: date-time */
+						createdAt: string;
+						/** Format: date-time */
+						updatedAt: string;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	getTask: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description The task. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						/** Format: uuid */
+						id: string;
+						taskNumber: number;
+						title: string;
+						description: string | null;
+						/** @enum {string} */
+						status: 'open' | 'in_progress' | 'blocked' | 'review' | 'completed';
+						/** Format: uuid */
+						categoryId: string;
+						/** Format: uuid */
+						assignedUserId: string;
+						/** Format: uuid */
+						authorUserId: string;
+						plannedAt: string | null;
+						archivedAt: string | null;
+						/** Format: date-time */
+						createdAt: string;
+						/** Format: date-time */
+						updatedAt: string;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	updateTask: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: {
+			content: {
+				'application/json': {
+					title?: string;
+					description?: string | null;
+					/** Format: uuid */
+					categoryId?: string;
+					/** Format: uuid */
+					assignedUserId?: string;
+					plannedAt?: string | null;
+					/** @enum {string} */
+					status?: 'open' | 'in_progress' | 'blocked' | 'review' | 'completed';
+				};
+			};
+		};
+		responses: {
+			/** @description The task after the update. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						/** Format: uuid */
+						id: string;
+						taskNumber: number;
+						title: string;
+						description: string | null;
+						/** @enum {string} */
+						status: 'open' | 'in_progress' | 'blocked' | 'review' | 'completed';
+						/** Format: uuid */
+						categoryId: string;
+						/** Format: uuid */
+						assignedUserId: string;
+						/** Format: uuid */
+						authorUserId: string;
+						plannedAt: string | null;
+						archivedAt: string | null;
+						/** Format: date-time */
+						createdAt: string;
+						/** Format: date-time */
+						updatedAt: string;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
 	listTimeEntries: {
 		parameters: {
 			query?: {
@@ -1767,7 +3760,8 @@ export interface operations {
 					| 'home_office'
 				)[];
 				archived?: boolean;
-				sort?: 'startDate' | '-startDate';
+				updatedSince?: string;
+				sort?: 'startDate' | '-startDate' | 'updatedAt' | '-updatedAt';
 			};
 			header?: never;
 			path?: never;
@@ -2791,6 +4785,12 @@ export interface operations {
 				attributes?: {
 					[key: string]: string;
 				};
+				fields?: string[];
+				status?: 'active' | 'archived' | 'all';
+				teamId?: string[];
+				search?: string;
+				updatedSince?: string;
+				sort?: 'id' | 'displayName' | '-displayName' | 'updatedAt' | '-updatedAt';
 			};
 			header?: never;
 			path?: never;
@@ -4029,6 +6029,4696 @@ export interface operations {
 						}[];
 						/** Format: date-time */
 						updatedAt: string;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listAbsenceRequests: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+				userId?: string[];
+				status?: ('opened' | 'booked' | 'approved' | 'canceled' | 'rejected')[];
+				from?: string;
+				to?: string;
+				archived?: boolean;
+				updatedSince?: string;
+				sort?: 'startDate' | '-startDate';
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A page of absence requests. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							/** Format: uuid */
+							id: string;
+							/** Format: uuid */
+							userId: string;
+							/** Format: uuid */
+							absenceTypeId: string;
+							/** @enum {string} */
+							status: 'opened' | 'booked' | 'approved' | 'canceled' | 'rejected';
+							startDate: string;
+							endDate: string;
+							substituteUserId: string | null;
+							/** Format: uuid */
+							createdByUserId: string;
+							/** Format: date-time */
+							createdAt: string;
+							archivedAt: string | null;
+						}[];
+						hasMore: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	getAbsenceRequest: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description The absence request. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						/** Format: uuid */
+						id: string;
+						/** Format: uuid */
+						userId: string;
+						/** Format: uuid */
+						absenceTypeId: string;
+						/** @enum {string} */
+						status: 'opened' | 'booked' | 'approved' | 'canceled' | 'rejected';
+						startDate: string;
+						endDate: string;
+						substituteUserId: string | null;
+						/** Format: uuid */
+						createdByUserId: string;
+						/** Format: date-time */
+						createdAt: string;
+						archivedAt: string | null;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listAbsentUsers: {
+		parameters: {
+			query: {
+				from: string;
+				to: string;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description The employees away in the window, with the days and types. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							/** Format: uuid */
+							userId: string;
+							days: {
+								date: string;
+								/** Format: uuid */
+								absenceTypeId: string;
+								absenceTypeName: string;
+								isRedacted: boolean;
+							}[];
+						}[];
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listAttendance: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+				userId?: string[];
+				status?: 'working' | 'absent' | 'away';
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A page of attendance states. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							/** Format: uuid */
+							userId: string;
+							/** @enum {string} */
+							status: 'working' | 'absent' | 'away';
+							workType:
+								| (
+										| 'worktime'
+										| 'breaktime'
+										| 'off_time'
+										| 'bad_weather'
+										| 'community_service'
+										| 'travel_time'
+										| 'home_office'
+								  )
+								| null;
+							since: string | null;
+							absenceTypes: {
+								/** Format: uuid */
+								id: string;
+								name: string;
+								isRedacted: boolean;
+							}[];
+						}[];
+						hasMore: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listDailyReports: {
+		parameters: {
+			query: {
+				limit?: number;
+				offset?: number;
+				userId?: string[];
+				from: string;
+				to: string;
+				updatedSince?: string;
+				sort?: 'date' | '-date';
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A page of daily reports. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							/** Format: uuid */
+							userId: string;
+							date: string;
+							totalWorkMinutes: number;
+							regularWorkMinutes: number;
+							homeOfficeMinutes: number;
+							travelMinutes: number;
+							badWeatherMinutes: number;
+							communityServiceMinutes: number;
+							breakMinutes: number;
+							targetWorkMinutes: number | null;
+							balanceMinutes: number | null;
+							flexBalanceMinutes: number | null;
+							startWorkTime: string | null;
+							endWorkTime: string | null;
+							/** Format: date-time */
+							updatedAt: string;
+						}[];
+						hasMore: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listFormSubmissions: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+				templateId?: string[];
+				status?: 'DRAFT' | 'COMPLETED';
+				archived?: boolean;
+				updatedSince?: string;
+				sort?: 'createdAt' | '-createdAt' | 'updatedAt' | '-updatedAt';
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A page of form submissions. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							/** Format: uuid */
+							id: string;
+							name: string;
+							templateId: string | null;
+							/** @enum {string} */
+							status: 'DRAFT' | 'COMPLETED';
+							/** Format: uuid */
+							createdByUserId: string;
+							/** Format: date-time */
+							createdAt: string;
+							/** Format: date-time */
+							updatedAt: string;
+							archivedAt: string | null;
+						}[];
+						hasMore: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	getFormSubmission: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description The form submission and its top-level field values. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						/** Format: uuid */
+						id: string;
+						name: string;
+						templateId: string | null;
+						/** @enum {string} */
+						status: 'DRAFT' | 'COMPLETED';
+						/** Format: uuid */
+						createdByUserId: string;
+						/** Format: date-time */
+						createdAt: string;
+						/** Format: date-time */
+						updatedAt: string;
+						archivedAt: string | null;
+						fields: {
+							key: string;
+							name: string;
+							value: string | number | boolean | null;
+						}[];
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	getEmployeeWage: {
+		parameters: {
+			query?: {
+				date?: string;
+			};
+			header?: never;
+			path: {
+				userId: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description The pay rate in force on the requested date. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						/** Format: uuid */
+						userId: string;
+						/** Format: uuid */
+						contractId: string;
+						date: string;
+						rateCents: number;
+						/** @enum {string} */
+						rateInterval: 'hourly' | 'monthly';
+						/** Format: uuid */
+						wageTypeId: string;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listSpecialPayments: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+				userId?: string[];
+				from?: string;
+				to?: string;
+				archived?: boolean;
+				sort?: 'date' | '-date';
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A page of special payments. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							/** Format: uuid */
+							id: string;
+							/** Format: uuid */
+							userId: string;
+							date: string;
+							note: string;
+							wageTypeId: string | null;
+							archivedAt: string | null;
+							/** Format: date-time */
+							createdAt: string;
+							amountCents: number;
+						}[];
+						hasMore: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listOvertimePayouts: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+				userId?: string[];
+				from?: string;
+				to?: string;
+				archived?: boolean;
+				sort?: 'date' | '-date';
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A page of overtime payouts. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							/** Format: uuid */
+							id: string;
+							/** Format: uuid */
+							userId: string;
+							date: string;
+							note: string;
+							wageTypeId: string | null;
+							archivedAt: string | null;
+							/** Format: date-time */
+							createdAt: string;
+							payoutMinutes: number;
+							centsPerHour: number;
+							excludedFromOvertimeBalance: boolean;
+						}[];
+						hasMore: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listWorkspaceEntries: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+				userId?: string[];
+				resourceId?: string[];
+				from?: string;
+				to?: string;
+				archived?: boolean;
+				updatedSince?: string;
+				sort?: 'startDate' | '-startDate';
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A page of workspace bookings. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							/** Format: uuid */
+							id: string;
+							/** Format: uuid */
+							resourceId: string;
+							userIds: string[];
+							/** Format: date-time */
+							startDate: string;
+							/** Format: date-time */
+							endDate: string;
+							note: string | null;
+							archivedAt: string | null;
+							/** Format: date-time */
+							updatedAt: string;
+						}[];
+						hasMore: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listEmployeeOptions: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+				search?: string;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A page of employees. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							value: string;
+							label: string;
+						}[];
+						hasMore: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listTeamOptions: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+				search?: string;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A page of teams. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							value: string;
+							label: string;
+						}[];
+						hasMore: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listProjectOptions: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+				search?: string;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A page of projects. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							value: string;
+							label: string;
+						}[];
+						hasMore: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listProjectTagOptions: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+				search?: string;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A page of project tags. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							value: string;
+							label: string;
+						}[];
+						hasMore: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listCostCenterOptions: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+				search?: string;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A page of cost centers. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							value: string;
+							label: string;
+						}[];
+						hasMore: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listAbsenceTypeOptions: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+				search?: string;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A page of absence types. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							value: string;
+							label: string;
+						}[];
+						hasMore: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listWorkspaceOptions: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+				search?: string;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A page of workspaces. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							value: string;
+							label: string;
+						}[];
+						hasMore: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listTaskCategoryOptions: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+				search?: string;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A page of task categories. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							value: string;
+							label: string;
+						}[];
+						hasMore: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+						errors: ({
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/** Format: uri */
+						type: string;
+						title: string;
+						status: number;
+						detail: string;
+						/** Format: uuid */
+						requestId: string;
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listWorkTypeOptions: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+				search?: string;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description The configured work types. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						items: {
+							value: string;
+							label: string;
+						}[];
+						hasMore: boolean;
 					};
 				};
 			};

@@ -1,20 +1,18 @@
 import type { IDataObject, INodeProperties, PreSendAction } from 'n8n-workflow';
-import { queryRouting, toOptions, type Body, type Query } from '../../api';
-import { filterProperties, resourceProperties, startDateSortLabels } from '../shared/properties';
+import { queryRouting, toUtc, type Body } from '../../api';
+import {
+	archivedFilter,
+	dropdown,
+	employeesFilter,
+	filterProperties,
+	multiDropdown,
+	resourceProperties,
+	sortFilter,
+	updatedSinceFilter,
+	windowFilters,
+} from '../shared/properties';
 
 type CreateTimeEntryBody = Body<'createTimeEntry'>;
-
-const typeOptions = toOptions<CreateTimeEntryBody['type']>({
-	bad_weather: 'Schlechtwetter',
-	breaktime: 'Pausenzeit',
-	community_service: 'Sozialstunden',
-	home_office: 'Mobile Arbeit',
-	off_time: 'Außerhalb der Arbeitszeit',
-	travel_time: 'Reisezeit',
-	worktime: 'Arbeitszeit',
-});
-
-const sortOptions = toOptions<NonNullable<Query<'listTimeEntries'>['sort']>>(startDateSortLabels);
 
 // The API requires costCenterId/projectId/tagId/description to be present, so the whole body is
 // assembled here with explicit nulls instead of per-field send routings.
@@ -23,8 +21,8 @@ const sendCreateBody: PreSendAction = async function (requestOptions) {
 	const body: CreateTimeEntryBody = {
 		userId: this.getNodeParameter('employeeId') as string,
 		type: this.getNodeParameter('type') as CreateTimeEntryBody['type'],
-		startDate: this.getNodeParameter('startDate') as string,
-		endDate: this.getNodeParameter('endDate') as string,
+		startDate: toUtc(this.getNodeParameter('startDate'), this.getTimezone()),
+		endDate: toUtc(this.getNodeParameter('endDate'), this.getTimezone()),
 		costCenterId: (additionalFields.costCenterId as string) || null,
 		projectId: (additionalFields.projectId as string) || null,
 		tagId: (additionalFields.tagId as string) || null,
@@ -40,12 +38,14 @@ export const timeEntryDescription: INodeProperties[] = [
 	...resourceProperties({
 		resource: 'timeEntry',
 		path: '/time-entries',
-		noun: 'Zeiteintrag',
 		nounPlural: 'Zeiteinträge',
-		idParameter: 'timeEntryId',
-		idDisplayName: 'Zeiteintrags-ID',
-		idDescription: 'UUID des Zeiteintrags',
-		idOperations: ['delete', 'get'],
+		get: {
+			noun: 'Zeiteintrag',
+			idParameter: 'timeEntryId',
+			idDisplayName: 'Zeiteintrags-ID',
+			idDescription: 'UUID des Zeiteintrags',
+			idOperations: ['delete', 'get'],
+		},
 		extraOperations: [
 			{
 				name: 'Erstellen',
@@ -69,23 +69,18 @@ export const timeEntryDescription: INodeProperties[] = [
 		],
 	}),
 	{
-		displayName: 'Mitarbeiter-ID',
+		displayName: 'Mitarbeiter',
 		name: 'employeeId',
-		type: 'string',
+		...dropdown('getEmployees'),
 		required: true,
-		default: '',
 		displayOptions: { show: showOnlyForCreate },
-		description: 'UUID des Mitarbeiters, zu dem der Eintrag gehört',
 	},
 	{
 		displayName: 'Typ',
 		name: 'type',
-		type: 'options',
+		...dropdown('getWorkTypes'),
 		required: true,
-		default: 'worktime',
-		options: typeOptions,
 		displayOptions: { show: showOnlyForCreate },
-		description: 'Art der Zeit, die der Eintrag erfasst',
 	},
 	{
 		displayName: 'Startdatum',
@@ -114,57 +109,30 @@ export const timeEntryDescription: INodeProperties[] = [
 		displayOptions: { show: showOnlyForCreate },
 		options: [
 			{ displayName: 'Beschreibung', name: 'description', type: 'string', default: '' },
-			{ displayName: 'Kostenstellen-ID', name: 'costCenterId', type: 'string', default: '' },
 			{ displayName: 'NFC-Tag-ID', name: 'tagId', type: 'string', default: '' },
-			{ displayName: 'Projekt-ID', name: 'projectId', type: 'string', default: '' },
+			{
+				displayName: 'Kostenstelle',
+				name: 'costCenterId',
+				...dropdown('getCostCenters'),
+			},
+			{
+				displayName: 'Projekt',
+				name: 'projectId',
+				...dropdown('getProjects'),
+			},
 		],
 	},
 	filterProperties('timeEntry', [
-		{
-			displayName: 'Archiviert',
-			name: 'archived',
-			type: 'boolean',
-			default: false,
-			routing: queryRouting<'listTimeEntries'>('archived'),
-		},
-		{
-			displayName: 'Bis',
-			name: 'to',
-			type: 'dateTime',
-			default: '',
-			routing: queryRouting<'listTimeEntries'>('to'),
-		},
-		{
-			displayName: 'Mitarbeiter-IDs',
-			name: 'userId',
-			type: 'string',
-			typeOptions: { multipleValues: true },
-			default: [],
-			description: 'UUIDs der Mitarbeiter, die einbezogen werden',
-			routing: queryRouting<'listTimeEntries'>('userId'),
-		},
-		{
-			displayName: 'Sortierung',
-			name: 'sort',
-			type: 'options',
-			options: sortOptions,
-			default: 'startDate',
-			routing: queryRouting<'listTimeEntries'>('sort'),
-		},
+		archivedFilter<'listTimeEntries'>(),
+		...windowFilters<'listTimeEntries'>('dateTime'),
+		employeesFilter<'listTimeEntries'>(),
 		{
 			displayName: 'Typen',
 			name: 'types',
-			type: 'multiOptions',
-			default: [],
-			options: typeOptions,
+			...multiDropdown('getWorkTypes'),
 			routing: queryRouting<'listTimeEntries'>('type'),
 		},
-		{
-			displayName: 'Von',
-			name: 'from',
-			type: 'dateTime',
-			default: '',
-			routing: queryRouting<'listTimeEntries'>('from'),
-		},
+		updatedSinceFilter<'listTimeEntries'>(),
+		sortFilter<'listTimeEntries'>(['startDate', '-startDate', 'updatedAt', '-updatedAt']),
 	]),
 ];

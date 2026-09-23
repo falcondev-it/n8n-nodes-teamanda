@@ -47,7 +47,7 @@ export class TeamandaApi implements ICredentialType {
 	test: ICredentialTestRequest = {
 		request: {
 			baseURL: '={{$credentials.baseUrl}}',
-			url: '/employees?limit=1',
+			url: '/connection',
 		},
 	};
 }
