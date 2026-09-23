@@ -1,4 +1,4 @@
-import type { INodePropertyOptions } from 'n8n-workflow';
+import { tryToParseDateTime, type INodePropertyOptions } from 'n8n-workflow';
 import type { operations } from './generated/api-types';
 
 export type OperationId = keyof operations;
@@ -30,10 +30,16 @@ export function queryRouting<Id extends OperationId>(
 /** Sends a dateTime field as the calendar date (`YYYY-MM-DD`) some query parameters take. */
 export const CALENDAR_DATE = '={{ String($value).slice(0, 10) }}';
 
-/** The API accepts only UTC instants (`…Z`) in request bodies. */
-export function toUtc(dateTime: string): string {
-	return new Date(dateTime).toISOString();
+/**
+ * The API accepts only UTC instants (`…Z`). n8n dateTime values carry no offset, so they are read
+ * in the workflow's timezone.
+ */
+export function toUtc(dateTime: unknown, timeZone: string): string {
+	return tryToParseDateTime(dateTime, timeZone).toUTC().toISO() as string;
 }
+
+/** `toUtc` for routing expressions, where luxon already defaults to the workflow's timezone. */
+export const UTC_INSTANT = '={{ DateTime.fromISO(String($value)).toUTC().toISO() }}';
 
 /** n8n requires option lists sorted by display name. */
 export function toOptions<T extends string>(labels: Record<T, string>): INodePropertyOptions[] {

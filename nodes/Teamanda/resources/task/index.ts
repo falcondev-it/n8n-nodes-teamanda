@@ -1,5 +1,5 @@
 import type { IDataObject, INodeProperties, PreSendAction } from 'n8n-workflow';
-import { queryRouting, toOptions, toUtc, type Body } from '../../api';
+import { queryRouting, toOptions, toUtc, UTC_INSTANT, type Body } from '../../api';
 import {
 	archivedFilter,
 	dropdown,
@@ -31,7 +31,7 @@ const sendCreateBody: PreSendAction = async function (requestOptions) {
 		categoryId: this.getNodeParameter('categoryId') as string,
 		assignedUserId: this.getNodeParameter('assignedUserId') as string,
 		description: (additionalFields.description as string) || null,
-		plannedAt: plannedAt ? toUtc(plannedAt) : null,
+		plannedAt: plannedAt ? toUtc(plannedAt, this.getTimezone()) : null,
 	};
 	requestOptions.body = body;
 	return requestOptions;
@@ -127,11 +127,7 @@ export const taskDescription: INodeProperties[] = [
 				type: 'dateTime',
 				default: '',
 				routing: {
-					send: {
-						type: 'body',
-						property: 'plannedAt',
-						value: '={{ new Date($value).toISOString() }}',
-					},
+					send: { type: 'body', property: 'plannedAt', value: UTC_INSTANT },
 				},
 			},
 			{ ...categoryField, routing: { send: { type: 'body', property: 'categoryId' } } },

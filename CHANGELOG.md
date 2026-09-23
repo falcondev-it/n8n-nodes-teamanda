@@ -8,7 +8,8 @@
   and the organization's enabled work types as dropdowns.
 - New filters for employees (status, teams, search, fields) and time entries (changed since).
 - Filter employees by attribute through a list of field and value pairs instead of raw JSON.
-- Send time entry start and end as UTC instants, as the API requires.
+- Send dates and times as UTC instants, as the API requires, reading values without an offset
+  in the workflow's timezone.
 - Test credentials against `GET /connection`.
 
 ## 0.1.0

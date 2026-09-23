@@ -21,8 +21,8 @@ const sendCreateBody: PreSendAction = async function (requestOptions) {
 	const body: CreateTimeEntryBody = {
 		userId: this.getNodeParameter('employeeId') as string,
 		type: this.getNodeParameter('type') as CreateTimeEntryBody['type'],
-		startDate: toUtc(this.getNodeParameter('startDate') as string),
-		endDate: toUtc(this.getNodeParameter('endDate') as string),
+		startDate: toUtc(this.getNodeParameter('startDate'), this.getTimezone()),
+		endDate: toUtc(this.getNodeParameter('endDate'), this.getTimezone()),
 		costCenterId: (additionalFields.costCenterId as string) || null,
 		projectId: (additionalFields.projectId as string) || null,
 		tagId: (additionalFields.tagId as string) || null,

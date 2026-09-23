@@ -1,5 +1,12 @@
 import type { INodeProperties, INodePropertyOptions } from 'n8n-workflow';
-import { CALENDAR_DATE, PAGE_SIZE, queryRouting, type OperationId, type Query } from '../../api';
+import {
+	CALENDAR_DATE,
+	PAGE_SIZE,
+	queryRouting,
+	UTC_INSTANT,
+	type OperationId,
+	type Query,
+} from '../../api';
 import type { LoadOptionsMethod } from '../../loadOptions';
 
 export type ResourceName =
@@ -241,19 +248,19 @@ export function updatedSinceFilter<Id extends OperationWith<'updatedSince'>>(): 
 		name: 'updatedSince',
 		type: 'dateTime',
 		default: '',
-		routing: queryRouting<Id>('updatedSince'),
+		routing: queryRouting<Id>('updatedSince', UTC_INSTANT),
 	};
 }
 
 /**
- * The `from` / `to` window. `date` sends calendar dates (`YYYY-MM-DD`), `dateTime` sends the
- * instant as entered.
+ * The `from` / `to` window. `date` sends calendar dates (`YYYY-MM-DD`), `dateTime` sends UTC
+ * instants.
  */
 export function windowFilters<Id extends OperationWith<'from' | 'to'>>(
 	kind: 'date' | 'dateTime',
 	options: { required?: boolean; displayOptions?: INodeProperties['displayOptions'] } = {},
 ): INodeProperties[] {
-	const value = kind === 'date' ? CALENDAR_DATE : undefined;
+	const value = kind === 'date' ? CALENDAR_DATE : UTC_INSTANT;
 	return [
 		{ displayName: 'Von', name: 'from' },
 		{ displayName: 'Bis', name: 'to' },
