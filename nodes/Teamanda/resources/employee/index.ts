@@ -91,8 +91,7 @@ export const employeeDescription: INodeProperties[] = [
 				send: {
 					type: 'query',
 					property: 'attributes',
-					value:
-						'={{ Object.fromEntries(($value.attribute ?? []).map((a) => [a.key, a.value])) }}',
+					value: '={{ Object.fromEntries(($value.attribute ?? []).map((a) => [a.key, a.value])) }}',
 				},
 			},
 		},
