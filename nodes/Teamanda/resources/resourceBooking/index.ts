@@ -27,7 +27,7 @@ export const resourceBookingDescription: INodeProperties[] = [
 		{
 			displayName: 'Ressource',
 			name: 'resourceId',
-			...dropdown('getWorkspaces'),
+			...dropdown('getResources'),
 			routing: queryRouting<'listResourceBookings'>('resourceId'),
 		},
 		sortFilter<'listResourceBookings'>(['startDate', '-startDate']),

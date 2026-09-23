@@ -34,7 +34,7 @@ The node's interface is German.
 - Überstundenauszahlung (overtime payout): Mehrere Abrufen
 - Zeiteintrag (time entry): Abrufen, Erstellen, Löschen, Mehrere Abrufen
 
-Employees, teams, projects, cost centers, work types, workspaces, task categories and
+Employees, teams, projects, cost centers, work types, resources, task categories and
 employee fields are offered as dropdowns loaded from the API.
 
 ## Credentials

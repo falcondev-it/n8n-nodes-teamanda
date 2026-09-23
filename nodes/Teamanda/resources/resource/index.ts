@@ -15,7 +15,7 @@ export const resourceDescription: INodeProperties[] = [
 			noun: 'Ressource',
 			idParameter: 'resourceId',
 			idDisplayName: 'Ressource',
-			idLoadOptionsMethod: 'getWorkspaces',
+			idLoadOptionsMethod: 'getResources',
 		},
 	}),
 	filterProperties('resource', [

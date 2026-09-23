@@ -4,7 +4,7 @@
 
 - Add Absence, Attendance, Daily Report, Employee Field, Form Submission, Overtime Payout,
   Special Payment, Task and Workspace Entry resources, and the employee wage operation.
-- Offer employees, teams, projects, cost centers, workspaces, task categories, employee fields
+- Offer employees, teams, projects, cost centers, resources, task categories, employee fields
   and the organization's enabled work types as dropdowns.
 - New filters for employees (status, teams, search, fields) and time entries (changed since).
 - Filter employees by attribute through a list of field and value pairs instead of raw JSON.

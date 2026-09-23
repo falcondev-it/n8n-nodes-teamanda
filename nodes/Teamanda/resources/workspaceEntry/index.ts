@@ -24,7 +24,7 @@ export const workspaceEntryDescription: INodeProperties[] = [
 		{
 			displayName: 'Arbeitsplätze',
 			name: 'resourceId',
-			...multiDropdown('getWorkspaces'),
+			...multiDropdown('getResources'),
 			routing: queryRouting<'listWorkspaceEntries'>('resourceId'),
 		},
 		updatedSinceFilter<'listWorkspaceEntries'>(),
