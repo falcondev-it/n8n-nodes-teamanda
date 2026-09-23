@@ -119,7 +119,10 @@ export const taskDescription: INodeProperties[] = [
 				name: 'description',
 				type: 'string',
 				default: '',
-				routing: { send: { type: 'body', property: 'description' } },
+				description: 'Leer lassen, um die Beschreibung zu entfernen',
+				routing: {
+					send: { type: 'body', property: 'description', value: '={{ $value || null }}' },
+				},
 			},
 			{
 				displayName: 'Geplant Für',
