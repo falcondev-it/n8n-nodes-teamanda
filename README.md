@@ -1,4 +1,4 @@
-# n8n-nodes-teamanda
+# @falcondev-it/n8n-nodes-teamanda
 
 This n8n community node lets workflows read Teamanda employee, absence, attendance, payroll,
 form, and scheduling data and manage time entries and tasks through the Teamanda REST API.
