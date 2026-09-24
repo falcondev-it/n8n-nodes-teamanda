@@ -9,20 +9,20 @@ import {
 } from '../shared/properties';
 
 const statusOptions = toOptions<NonNullable<Query<'listFormSubmissions'>['status']>>({
-	COMPLETED: 'Abgeschlossen',
-	DRAFT: 'Entwurf',
+	COMPLETED: 'Completed',
+	DRAFT: 'Draft',
 });
 
 export const formSubmissionDescription: INodeProperties[] = [
 	...resourceProperties({
 		resource: 'formSubmission',
 		path: '/form-submissions',
-		nounPlural: 'Formulareinreichungen',
+		nounPlural: 'form submissions',
 		get: {
-			noun: 'Formulareinreichung',
+			noun: 'form submission',
 			idParameter: 'formSubmissionId',
-			idDisplayName: 'Einreichungs-ID',
-			idDescription: 'UUID der Formulareinreichung; liefert auch die Feldwerte',
+			idDisplayName: 'Form Submission ID',
+			idDescription: 'UUID of the form submission. Also returns the field values.',
 		},
 	}),
 	filterProperties('formSubmission', [
@@ -36,12 +36,12 @@ export const formSubmissionDescription: INodeProperties[] = [
 			routing: queryRouting<'listFormSubmissions'>('status'),
 		},
 		{
-			displayName: 'Vorlagen-IDs',
+			displayName: 'Template IDs',
 			name: 'templateId',
 			type: 'string',
 			typeOptions: { multipleValues: true },
 			default: [],
-			description: 'UUIDs der Formularvorlagen, aus denen die Einreichungen stammen',
+			description: 'UUIDs of the form templates the submissions come from',
 			routing: queryRouting<'listFormSubmissions'>('templateId'),
 		},
 		updatedSinceFilter<'listFormSubmissions'>(),

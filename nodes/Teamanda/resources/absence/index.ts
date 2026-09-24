@@ -11,30 +11,30 @@ import {
 } from '../shared/properties';
 
 const statusOptions = toOptions<NonNullable<Query<'listAbsenceRequests'>['status']>[number]>({
-	approved: 'Genehmigt',
-	booked: 'Gebucht',
-	canceled: 'Storniert',
-	opened: 'Offen',
-	rejected: 'Abgelehnt',
+	approved: 'Approved',
+	booked: 'Booked',
+	canceled: 'Canceled',
+	opened: 'Open',
+	rejected: 'Rejected',
 });
 
 export const absenceDescription: INodeProperties[] = [
 	...resourceProperties({
 		resource: 'absence',
 		path: '/absences/requests',
-		nounPlural: 'Abwesenheitsanträge',
+		nounPlural: 'absence requests',
 		get: {
-			noun: 'Abwesenheitsantrag',
+			noun: 'absence request',
 			idParameter: 'absenceRequestId',
-			idDisplayName: 'Antrags-ID',
-			idDescription: 'UUID des Abwesenheitsantrags',
+			idDisplayName: 'Absence Request ID',
+			idDescription: 'UUID of the absence request',
 		},
 		extraOperations: [
 			{
-				name: 'Abwesende Abrufen',
+				name: 'Get Absent Employees',
 				value: 'getAbsentUsers',
-				action: 'Abwesende Mitarbeiter abrufen',
-				description: 'Je Mitarbeiter die Tage mit genehmigter oder gebuchter Abwesenheit abrufen',
+				action: 'Get absent employees',
+				description: 'Get the days of approved or booked absence for each employee',
 				routing: {
 					request: { method: 'GET', url: '/absences/absent-users' },
 					output: {

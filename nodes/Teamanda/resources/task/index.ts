@@ -14,11 +14,11 @@ type CreateTaskBody = Body<'createTask'>;
 type UpdateTaskBody = Body<'updateTask'>;
 
 const statusOptions = toOptions<NonNullable<UpdateTaskBody['status']>>({
-	blocked: 'Blockiert',
-	completed: 'Abgeschlossen',
-	in_progress: 'In Bearbeitung',
-	open: 'Offen',
-	review: 'In Prüfung',
+	blocked: 'Blocked',
+	completed: 'Completed',
+	in_progress: 'In Progress',
+	open: 'Open',
+	review: 'In Review',
 });
 
 // The API requires description/plannedAt to be present, so the body is assembled here with
@@ -40,13 +40,13 @@ const sendCreateBody: PreSendAction = async function (requestOptions) {
 const showOnlyForCreate = { operation: ['create'], resource: ['task'] };
 
 const categoryField: INodeProperties = {
-	displayName: 'Kategorie',
+	displayName: 'Category Name or ID',
 	name: 'categoryId',
 	...dropdown('getTaskCategories'),
 };
 
 const assigneeField: INodeProperties = {
-	displayName: 'Zugewiesener Mitarbeiter',
+	displayName: 'Assignee Name or ID',
 	name: 'assignedUserId',
 	...dropdown('getEmployees'),
 };
@@ -55,27 +55,27 @@ export const taskDescription: INodeProperties[] = [
 	...resourceProperties({
 		resource: 'task',
 		path: '/tasks',
-		nounPlural: 'Aufgaben',
+		nounPlural: 'tasks',
 		get: {
-			noun: 'Aufgabe',
+			noun: 'task',
 			idParameter: 'taskId',
-			idDisplayName: 'Aufgaben-ID',
-			idDescription: 'UUID der Aufgabe',
+			idDisplayName: 'Task ID',
+			idDescription: 'UUID of the task',
 			idOperations: ['get', 'update'],
 		},
 		extraOperations: [
 			{
-				name: 'Aktualisieren',
+				name: 'Update',
 				value: 'update',
-				action: 'Aufgabe aktualisieren',
-				description: 'Nur die angegebenen Felder einer Aufgabe ändern',
+				action: 'Update a task',
+				description: 'Change only the given fields of a task',
 				routing: { request: { method: 'PATCH', url: '=/tasks/{{$parameter.taskId}}' } },
 			},
 			{
-				name: 'Erstellen',
+				name: 'Create',
 				value: 'create',
-				action: 'Aufgabe erstellen',
-				description: 'Aufgabe erstellen; nicht idempotent',
+				action: 'Create a task',
+				description: 'Create a task. Not idempotent.',
 				routing: {
 					request: { method: 'POST', url: '/tasks' },
 					send: { preSend: [sendCreateBody] },
@@ -84,7 +84,7 @@ export const taskDescription: INodeProperties[] = [
 		],
 	}),
 	{
-		displayName: 'Titel',
+		displayName: 'Title',
 		name: 'title',
 		type: 'string',
 		required: true,
@@ -94,38 +94,37 @@ export const taskDescription: INodeProperties[] = [
 	{ ...categoryField, required: true, displayOptions: { show: showOnlyForCreate } },
 	{ ...assigneeField, required: true, displayOptions: { show: showOnlyForCreate } },
 	{
-		displayName: 'Zusätzliche Felder',
+		displayName: 'Additional Fields',
 		name: 'additionalFields',
 		type: 'collection',
-		placeholder: 'Feld hinzufügen',
+		placeholder: 'Add Field',
 		default: {},
 		displayOptions: { show: showOnlyForCreate },
 		options: [
-			{ displayName: 'Beschreibung', name: 'description', type: 'string', default: '' },
-			{ displayName: 'Geplant Für', name: 'plannedAt', type: 'dateTime', default: '' },
+			{ displayName: 'Description', name: 'description', type: 'string', default: '' },
+			{ displayName: 'Planned For', name: 'plannedAt', type: 'dateTime', default: '' },
 		],
 	},
 	{
-		// eslint-disable-next-line n8n-nodes-base/node-param-display-name-wrong-for-update-fields -- labels are German
-		displayName: 'Zu Ändernde Felder',
+		displayName: 'Update Fields',
 		name: 'updateFields',
 		type: 'collection',
-		placeholder: 'Feld hinzufügen',
+		placeholder: 'Add Field',
 		default: {},
 		displayOptions: { show: { operation: ['update'], resource: ['task'] } },
 		options: [
 			{
-				displayName: 'Beschreibung',
+				displayName: 'Description',
 				name: 'description',
 				type: 'string',
 				default: '',
-				description: 'Leer lassen, um die Beschreibung zu entfernen',
+				description: 'Leave empty to remove the description',
 				routing: {
 					send: { type: 'body', property: 'description', value: '={{ $value || null }}' },
 				},
 			},
 			{
-				displayName: 'Geplant Für',
+				displayName: 'Planned For',
 				name: 'plannedAt',
 				type: 'dateTime',
 				default: '',
@@ -140,11 +139,11 @@ export const taskDescription: INodeProperties[] = [
 				type: 'options',
 				options: statusOptions,
 				default: 'open',
-				description: 'Ein Statuswechsel erzeugt einen Statuskommentar',
+				description: 'Changing the status creates a status comment',
 				routing: { send: { type: 'body', property: 'status' } },
 			},
 			{
-				displayName: 'Titel',
+				displayName: 'Title',
 				name: 'title',
 				type: 'string',
 				default: '',
@@ -156,13 +155,13 @@ export const taskDescription: INodeProperties[] = [
 	filterProperties('task', [
 		archivedFilter<'listTasks'>(),
 		{
-			displayName: 'Zugewiesene Mitarbeiter',
+			displayName: 'Assignee Names or IDs',
 			name: 'assignedUserId',
 			...multiDropdown('getEmployees'),
 			routing: queryRouting<'listTasks'>('assignedUserId'),
 		},
 		{
-			displayName: 'Kategorien',
+			displayName: 'Category Names or IDs',
 			name: 'categoryId',
 			...multiDropdown('getTaskCategories'),
 			routing: queryRouting<'listTasks'>('categoryId'),

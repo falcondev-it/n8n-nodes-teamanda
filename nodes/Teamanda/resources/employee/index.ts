@@ -10,29 +10,29 @@ import {
 } from '../shared/properties';
 
 const statusOptions = toOptions<NonNullable<Query<'listEmployees'>['status']>>({
-	active: 'Aktiv',
-	all: 'Alle',
-	archived: 'Archiviert',
+	active: 'Active',
+	all: 'All',
+	archived: 'Archived',
 });
 
 export const employeeDescription: INodeProperties[] = [
 	...resourceProperties({
 		resource: 'employee',
 		path: '/employees',
-		nounPlural: 'Mitarbeiter',
+		nounPlural: 'employees',
 		get: {
-			noun: 'Mitarbeiter',
+			noun: 'employee',
 			idParameter: 'employeeId',
-			idDisplayName: 'Mitarbeiter',
+			idDisplayName: 'Employee Name or ID',
 			idLoadOptionsMethod: 'getEmployees',
 			idOperations: ['get', 'getWage'],
 		},
 		extraOperations: [
 			{
-				name: 'Lohn Abrufen',
+				name: 'Get Wage',
 				value: 'getWage',
-				action: 'Lohn eines Mitarbeiters abrufen',
-				description: 'Lohnsatz aus dem am Stichtag gültigen Arbeitsvertrag abrufen',
+				action: 'Get the wage of an employee',
+				description: 'Get the wage rate from the employment contract valid on the reference date',
 				routing: {
 					request: { method: 'GET', url: '=/employees/{{$parameter.employeeId}}/wage' },
 				},
@@ -40,44 +40,44 @@ export const employeeDescription: INodeProperties[] = [
 		],
 	}),
 	{
-		displayName: 'Optionen',
+		displayName: 'Options',
 		name: 'wageOptions',
 		type: 'collection',
-		placeholder: 'Option hinzufügen',
+		placeholder: 'Add Option',
 		default: {},
 		displayOptions: { show: { operation: ['getWage'], resource: ['employee'] } },
 		options: [
 			{
-				displayName: 'Stichtag',
+				displayName: 'Reference Date',
 				name: 'date',
 				type: 'dateTime',
 				default: '',
-				description: 'Tag, dessen Vertrag gilt. Standard ist heute.',
+				description: 'Day whose contract applies. Defaults to today.',
 				routing: queryRouting<'getEmployeeWage'>('date', CALENDAR_DATE),
 			},
 		],
 	},
 	filterProperties('employee', [
 		{
-			displayName: 'Nach Attributen Filtern',
+			displayName: 'Filter by Attributes',
 			name: 'attributes',
 			type: 'fixedCollection',
 			typeOptions: { multipleValues: true },
-			placeholder: 'Attribut hinzufügen',
+			placeholder: 'Add Attribute',
 			default: {},
-			description: 'Nur Mitarbeiter, deren Attribute exakt diesen Werten entsprechen',
+			description: 'Only employees whose attributes exactly match these values',
 			options: [
 				{
-					displayName: 'Attribut',
+					displayName: 'Attribute',
 					name: 'attribute',
 					values: [
 						{
-							displayName: 'Attribut',
+							displayName: 'Attribute Name or ID',
 							name: 'key',
 							...dropdown('getEmployeeFields'),
 						},
 						{
-							displayName: 'Wert',
+							displayName: 'Value',
 							name: 'value',
 							type: 'string',
 							default: '',
@@ -96,11 +96,11 @@ export const employeeDescription: INodeProperties[] = [
 			},
 		},
 		{
-			displayName: 'Zurückgegebene Attribute',
+			displayName: 'Returned Attribute Names or IDs',
 			name: 'fields',
 			...multiDropdown('getEmployeeFields'),
 			description:
-				'Nur diese Attribute in der Antwort zurückgeben. Leer lassen für alle öffentlichen Attribute.',
+				'Only return these attributes in the response. Leave empty for all public attributes.',
 			routing: queryRouting<'listEmployees'>('fields'),
 		},
 		{
@@ -112,15 +112,15 @@ export const employeeDescription: INodeProperties[] = [
 			routing: queryRouting<'listEmployees'>('status'),
 		},
 		{
-			displayName: 'Suche',
+			displayName: 'Search',
 			name: 'search',
 			type: 'string',
 			default: '',
-			description: 'Durchsucht Anzeigename und vollständigen Namen',
+			description: 'Searches display name and full name',
 			routing: queryRouting<'listEmployees'>('search'),
 		},
 		{
-			displayName: 'Teams',
+			displayName: 'Team Names or IDs',
 			name: 'teamId',
 			...multiDropdown('getTeams'),
 			routing: queryRouting<'listEmployees'>('teamId'),

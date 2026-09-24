@@ -12,7 +12,7 @@ export const specialPaymentDescription: INodeProperties[] = [
 	...resourceProperties({
 		resource: 'specialPayment',
 		path: '/special-payments',
-		nounPlural: 'Sonderzahlungen',
+		nounPlural: 'special payments',
 	}),
 	filterProperties('specialPayment', [
 		archivedFilter<'listSpecialPayments'>(),
@@ -26,7 +26,7 @@ export const overtimePayoutDescription: INodeProperties[] = [
 	...resourceProperties({
 		resource: 'overtimePayout',
 		path: '/overtime-payouts',
-		nounPlural: 'Überstundenauszahlungen',
+		nounPlural: 'overtime payouts',
 	}),
 	filterProperties('overtimePayout', [
 		archivedFilter<'listOvertimePayouts'>(),

@@ -16,19 +16,19 @@ import type { ResourceName } from './resources/shared/properties';
 import { toOptions } from './api';
 
 const resourceOptions = toOptions<ResourceName>({
-	absence: 'Abwesenheit',
-	attendance: 'Anwesenheit',
-	dailyReport: 'Tagesbericht',
-	employee: 'Mitarbeiter',
-	employeeField: 'Mitarbeiterfeld',
-	formSubmission: 'Formulareinreichung',
-	overtimePayout: 'Überstundenauszahlung',
-	resource: 'Ressource',
-	resourceBooking: 'Ressourcenbuchung',
-	specialPayment: 'Sonderzahlung',
-	task: 'Aufgabe',
-	timeEntry: 'Zeiteintrag',
-	workspaceEntry: 'Arbeitsplatzbuchung',
+	absence: 'Absence',
+	attendance: 'Attendance',
+	dailyReport: 'Daily Report',
+	employee: 'Employee',
+	employeeField: 'Employee Field',
+	formSubmission: 'Form Submission',
+	overtimePayout: 'Overtime Payout',
+	resource: 'Resource',
+	resourceBooking: 'Resource Booking',
+	specialPayment: 'Special Payment',
+	task: 'Task',
+	timeEntry: 'Time Entry',
+	workspaceEntry: 'Workspace Booking',
 });
 
 export class Teamanda implements INodeType {
@@ -39,7 +39,7 @@ export class Teamanda implements INodeType {
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
-		description: 'Mit der Teamanda-API interagieren',
+		description: 'Interact with the Teamanda API',
 		defaults: {
 			name: 'Teamanda',
 		},
@@ -58,7 +58,7 @@ export class Teamanda implements INodeType {
 		},
 		properties: [
 			{
-				displayName: 'Ressource',
+				displayName: 'Resource',
 				name: 'resource',
 				type: 'options',
 				noDataExpression: true,

@@ -13,19 +13,19 @@ export const resourceBookingDescription: INodeProperties[] = [
 	...resourceProperties({
 		resource: 'resourceBooking',
 		path: '/resource-bookings',
-		nounPlural: 'Ressourcenbuchungen',
+		nounPlural: 'resource bookings',
 		get: {
-			noun: 'Ressourcenbuchung',
+			noun: 'resource booking',
 			idParameter: 'bookingId',
-			idDisplayName: 'Buchungs-ID',
-			idDescription: 'UUID der Ressourcenbuchung',
+			idDisplayName: 'Booking ID',
+			idDescription: 'UUID of the resource booking',
 		},
 	}),
 	filterProperties('resourceBooking', [
 		...windowFilters<'listResourceBookings'>('dateTime'),
 		updatedSinceFilter<'listResourceBookings'>(),
 		{
-			displayName: 'Ressource',
+			displayName: 'Resource Name or ID',
 			name: 'resourceId',
 			...dropdown('getResources'),
 			routing: queryRouting<'listResourceBookings'>('resourceId'),

@@ -28,16 +28,16 @@ export type ResourceSpec = {
 	resource: ResourceName;
 	/** Collection path, e.g. `/employees`. */
 	path: string;
-	/** Plural display noun, e.g. `Mitarbeiter`. */
+	/** Plural lowercase noun, e.g. `employees`. */
 	nounPlural: string;
 	/** Adds a Get operation and the record ID field. Omit for list-only resources. */
 	get?: {
-		/** Singular display noun, e.g. `Mitarbeiter`. */
+		/** Singular lowercase noun, e.g. `employee`. */
 		noun: string;
 		/** Parameter holding the record's UUID, e.g. `employeeId`. */
 		idParameter: string;
 		idDisplayName: string;
-		/** Description of the ID field, e.g. `UUID des Mitarbeiters`. Ignored for a dropdown. */
+		/** Description of the ID field, e.g. `UUID of the employee`. Ignored for a dropdown. */
 		idDescription?: string;
 		/** Offers the IDs as a dropdown instead of a text field. */
 		idLoadOptionsMethod?: LoadOptionsMethod;
@@ -55,11 +55,10 @@ export function resourceProperties(spec: ResourceSpec): INodeProperties[] {
 
 	const operations: INodePropertyOptions[] = [
 		{
-			// eslint-disable-next-line n8n-nodes-base/node-param-option-name-wrong-for-get-many -- labels are German
-			name: 'Mehrere Abrufen',
+			name: 'Get Many',
 			value: 'getAll',
-			action: `Mehrere ${nounPlural} abrufen`,
-			description: `Mehrere ${nounPlural} abrufen`,
+			action: `Get many ${nounPlural}`,
+			description: `Get many ${nounPlural}`,
 			routing: {
 				request: { method: 'GET', url: path },
 				// Lists answer `{ items, hasMore }`; emit one n8n item per record instead.
@@ -84,11 +83,12 @@ export function resourceProperties(spec: ResourceSpec): INodeProperties[] {
 		...(spec.extraOperations ?? []),
 	];
 	if (get) {
+		const article = /^[aeiou]/.test(get.noun) ? 'an' : 'a';
 		operations.push({
-			name: 'Abrufen',
+			name: 'Get',
 			value: 'get',
-			action: `${get.noun} abrufen`,
-			description: `${get.noun} abrufen`,
+			action: `Get ${article} ${get.noun}`,
+			description: `Get ${article} ${get.noun}`,
 			routing: { request: { method: 'GET', url: `=${path}/{{$parameter.${get.idParameter}}}` } },
 		});
 	}
@@ -120,14 +120,12 @@ export function resourceProperties(spec: ResourceSpec): INodeProperties[] {
 				]
 			: []),
 		{
-			displayName: 'Alle Zurückgeben',
+			displayName: 'Return All',
 			name: 'returnAll',
 			type: 'boolean',
 			displayOptions: { show: forGetMany },
 			default: false,
-			/* eslint-disable-next-line n8n-nodes-base/node-param-description-boolean-without-whether,
-			   n8n-nodes-base/node-param-description-wrong-for-return-all -- labels are German */
-			description: 'Ob alle Ergebnisse zurückgegeben werden oder nur bis zu einem Limit',
+			description: 'Whether to return all results or only up to a given limit',
 			routing: { send: { paginate: '={{ $value }}' } },
 		},
 		{
@@ -137,8 +135,7 @@ export function resourceProperties(spec: ResourceSpec): INodeProperties[] {
 			displayOptions: { show: { ...forGetMany, returnAll: [false] } },
 			typeOptions: { minValue: 1, maxValue: PAGE_SIZE },
 			default: 50,
-			// eslint-disable-next-line n8n-nodes-base/node-param-description-wrong-for-limit -- labels are German
-			description: 'Maximale Anzahl der zurückzugebenden Ergebnisse',
+			description: 'Max number of results to return',
 			routing: { send: { type: 'query', property: 'limit' } },
 		},
 	];
@@ -150,25 +147,25 @@ export function filterProperties(
 	options: INodeProperties[],
 ): INodeProperties {
 	return {
-		displayName: 'Filter',
+		displayName: 'Filters',
 		name: 'filters',
 		type: 'collection',
-		placeholder: 'Filter hinzufügen',
+		placeholder: 'Add Filter',
 		default: {},
 		displayOptions: { show: { operation: ['getAll'], resource: [resource] } },
 		options: options.sort((a, b) => a.displayName.localeCompare(b.displayName)),
 	};
 }
 
-const expressionLink = '<a href="https://docs.n8n.io/code/expressions/">Ausdruck</a>';
+const expressionLink = '<a href="https://docs.n8n.io/code/expressions/">expression</a>';
 
-/** A dropdown fed by `method`; the description is n8n's standard "Name or ID" hint in German. */
+/** A dropdown fed by `method`; the description is n8n's standard "Name or ID" hint. */
 export function dropdown(method: LoadOptionsMethod) {
 	return {
 		type: 'options' as const,
 		typeOptions: { loadOptionsMethod: method },
 		default: '',
-		description: `Aus der Liste wählen oder eine ID per ${expressionLink} angeben`,
+		description: `Choose from the list, or specify an ID using an ${expressionLink}`,
 	};
 }
 
@@ -177,7 +174,7 @@ export function multiDropdown(method: LoadOptionsMethod) {
 		type: 'multiOptions' as const,
 		typeOptions: { loadOptionsMethod: method },
 		default: [],
-		description: `Aus der Liste wählen oder IDs per ${expressionLink} angeben`,
+		description: `Choose from the list, or specify IDs using an ${expressionLink}`,
 	};
 }
 
@@ -188,7 +185,7 @@ type OperationWith<K extends string> = {
 /** The `userId` filter most list endpoints share, offered as an employee dropdown. */
 export function employeesFilter<Id extends OperationWith<'userId'>>(): INodeProperties {
 	return {
-		displayName: 'Mitarbeiter',
+		displayName: 'Employee Names or IDs',
 		name: 'userId',
 		...multiDropdown('getEmployees'),
 		routing: queryRouting<Id>('userId'),
@@ -200,14 +197,14 @@ type AnySort = { [Id in OperationId]: Sort<Id> }[OperationId];
 type SortField = AnySort extends infer S ? (S extends `-${infer F}` ? F : S) : never;
 
 const sortFieldLabels: Record<SortField, string> = {
-	createdAt: 'Erstellt am',
-	date: 'Datum',
-	displayName: 'Anzeigename',
+	createdAt: 'Created At',
+	date: 'Date',
+	displayName: 'Display Name',
 	id: 'ID',
 	name: 'Name',
-	startDate: 'Startdatum',
-	taskNumber: 'Aufgabennummer',
-	updatedAt: 'Geändert am',
+	startDate: 'Start Date',
+	taskNumber: 'Task Number',
+	updatedAt: 'Updated At',
 };
 
 /** The Sort filter; the first value is the API default. */
@@ -218,13 +215,13 @@ export function sortFilter<Id extends OperationWith<'sort'>>(
 		const descending = value.startsWith('-');
 		const field = (descending ? value.slice(1) : value) as SortField;
 		return {
-			name: `${sortFieldLabels[field]} (${descending ? 'Absteigend' : 'Aufsteigend'})`,
+			name: `${sortFieldLabels[field]} (${descending ? 'Descending' : 'Ascending'})`,
 			value,
 		};
 	});
 	// eslint-disable-next-line n8n-nodes-base/node-param-default-missing -- default is values[0]
 	return {
-		displayName: 'Sortierung',
+		displayName: 'Sort',
 		name: 'sort',
 		type: 'options',
 		options: options.sort((a, b) => a.name.localeCompare(b.name)),
@@ -235,7 +232,7 @@ export function sortFilter<Id extends OperationWith<'sort'>>(
 
 export function archivedFilter<Id extends OperationWith<'archived'>>(): INodeProperties {
 	return {
-		displayName: 'Archiviert',
+		displayName: 'Archived',
 		name: 'archived',
 		type: 'boolean',
 		default: false,
@@ -245,7 +242,7 @@ export function archivedFilter<Id extends OperationWith<'archived'>>(): INodePro
 
 export function updatedSinceFilter<Id extends OperationWith<'updatedSince'>>(): INodeProperties {
 	return {
-		displayName: 'Geändert Seit',
+		displayName: 'Updated Since',
 		name: 'updatedSince',
 		type: 'dateTime',
 		default: '',
@@ -263,8 +260,8 @@ export function windowFilters<Id extends OperationWith<'from' | 'to'>>(
 ): INodeProperties[] {
 	const value = kind === 'date' ? CALENDAR_DATE : UTC_INSTANT;
 	return [
-		{ displayName: 'Von', name: 'from' },
-		{ displayName: 'Bis', name: 'to' },
+		{ displayName: 'From', name: 'from' },
+		{ displayName: 'To', name: 'to' },
 	].map(({ displayName, name }) => ({
 		displayName,
 		name,

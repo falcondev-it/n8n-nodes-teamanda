@@ -10,11 +10,11 @@ export const resourceDescription: INodeProperties[] = [
 	...resourceProperties({
 		resource: 'resource',
 		path: '/resources',
-		nounPlural: 'Ressourcen',
+		nounPlural: 'resources',
 		get: {
-			noun: 'Ressource',
+			noun: 'resource',
 			idParameter: 'resourceId',
-			idDisplayName: 'Ressource',
+			idDisplayName: 'Resource Name or ID',
 			idLoadOptionsMethod: 'getResources',
 		},
 	}),

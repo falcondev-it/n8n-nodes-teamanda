@@ -15,14 +15,14 @@ export const workspaceEntryDescription: INodeProperties[] = [
 	...resourceProperties({
 		resource: 'workspaceEntry',
 		path: '/workspace-entries',
-		nounPlural: 'Arbeitsplatzbuchungen',
+		nounPlural: 'workspace bookings',
 	}),
 	filterProperties('workspaceEntry', [
 		archivedFilter<'listWorkspaceEntries'>(),
 		...windowFilters<'listWorkspaceEntries'>('dateTime'),
 		employeesFilter<'listWorkspaceEntries'>(),
 		{
-			displayName: 'Arbeitsplätze',
+			displayName: 'Workspace Names or IDs',
 			name: 'resourceId',
 			...multiDropdown('getResources'),
 			routing: queryRouting<'listWorkspaceEntries'>('resourceId'),

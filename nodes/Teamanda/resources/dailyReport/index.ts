@@ -12,7 +12,7 @@ export const dailyReportDescription: INodeProperties[] = [
 	...resourceProperties({
 		resource: 'dailyReport',
 		path: '/daily-reports',
-		nounPlural: 'Tagesberichte',
+		nounPlural: 'daily reports',
 	}),
 	...windowFilters<'listDailyReports'>('date', {
 		required: true,

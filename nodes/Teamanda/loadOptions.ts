@@ -37,13 +37,13 @@ function fromOptionsEndpoint(path: Extract<ListPath, `/options/${string}`>) {
 }
 
 const workTypeLabels: Record<Body<'createTimeEntry'>['type'], string> = {
-	bad_weather: 'Schlechtwetter',
-	breaktime: 'Pausenzeit',
-	community_service: 'Sozialstunden',
-	home_office: 'Mobile Arbeit',
-	off_time: 'Außerhalb der Arbeitszeit',
-	travel_time: 'Reisezeit',
-	worktime: 'Arbeitszeit',
+	bad_weather: 'Bad Weather',
+	breaktime: 'Break Time',
+	community_service: 'Community Service',
+	home_office: 'Home Office',
+	off_time: 'Off Time',
+	travel_time: 'Travel Time',
+	worktime: 'Work Time',
 };
 
 export const loadOptions = {

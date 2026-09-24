@@ -1,68 +1,66 @@
 # n8n-nodes-teamanda
 
-Mit diesem n8n-Community-Node lesen Workflows über die Teamanda-REST-API Mitarbeiter-,
-Abwesenheits-, Anwesenheits-, Lohn-, Formular- und Planungsdaten und verwalten
-Zeiteinträge und Aufgaben.
+This n8n community node lets workflows read Teamanda employee, absence, attendance, payroll,
+form, and scheduling data and manage time entries and tasks through the Teamanda REST API.
 
-[n8n](https://n8n.io/) ist eine Workflow-Automatisierungsplattform unter [Fair-Code-Lizenz](https://docs.n8n.io/sustainable-use-license/).
+[n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/sustainable-use-license/) workflow automation platform.
 
 [Installation](#installation)
-[Operationen](#operationen)
-[Zugangsdaten](#zugangsdaten)
-[Verwendung](#verwendung)
-[Ressourcen](#ressourcen)
-[Versionsverlauf](#versionsverlauf)
+[Operations](#operations)
+[Credentials](#credentials)
+[Usage](#usage)
+[Resources](#resources)
+[Version history](#version-history)
 
 ## Installation
 
-Folge der [Installationsanleitung](https://docs.n8n.io/integrations/community-nodes/installation/) in der Dokumentation zu n8n-Community-Nodes.
+Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation.
 
-## Operationen
+## Operations
 
-- Abwesenheit: Abrufen, Abwesende Abrufen, Mehrere Abrufen
-- Anwesenheit: Mehrere Abrufen
-- Arbeitsplatzbuchung: Mehrere Abrufen
-- Aufgabe: Abrufen, Aktualisieren, Erstellen, Mehrere Abrufen
-- Formulareinreichung: Abrufen, Mehrere Abrufen
-- Mitarbeiter: Abrufen, Lohn Abrufen, Mehrere Abrufen
-- Mitarbeiterfeld: Mehrere Abrufen
-- Ressource: Abrufen, Mehrere Abrufen
-- Ressourcenbuchung: Abrufen, Mehrere Abrufen
-- Sonderzahlung: Mehrere Abrufen
-- Tagesbericht: Mehrere Abrufen
-- Überstundenauszahlung: Mehrere Abrufen
-- Zeiteintrag: Abrufen, Erstellen, Löschen, Mehrere Abrufen
+- Absence: Get, Get Absent Employees, Get Many
+- Attendance: Get Many
+- Daily Report: Get Many
+- Employee: Get, Get Many, Get Wage
+- Employee Field: Get Many
+- Form Submission: Get, Get Many
+- Overtime Payout: Get Many
+- Resource: Get, Get Many
+- Resource Booking: Get, Get Many
+- Special Payment: Get Many
+- Task: Create, Get, Get Many, Update
+- Time Entry: Create, Delete, Get, Get Many
+- Workspace Booking: Get Many
 
-Mitarbeiter, Teams, Projekte, Kostenstellen, Zeittypen, Ressourcen, Aufgabenkategorien und
-Mitarbeiterfelder stehen als Dropdowns zur Auswahl, die aus der API geladen werden.
+Employees, teams, projects, cost centers, work types, resources, task categories, and employee
+fields are offered as dropdowns loaded from the API.
 
-## Zugangsdaten
+## Credentials
 
-Lege in Teamanda einen API-Schlüssel an und trage ihn in den Zugangsdaten „Teamanda API“
-ein. Der Schlüssel wird im Header `X-API-Key` gesendet. Die Standard-API-URL ist
-`https://api.teamanda.de/v1` und lässt sich für eine andere Teamanda-Instanz ändern. Der
-Verbindungstest ruft `GET /connection` auf und braucht außer einem gültigen Schlüssel keine
-Berechtigung.
+Create an API key in Teamanda and enter it in the Teamanda API credential. The credential
+sends the key through the `X-API-Key` header. The default API URL is
+`https://api.teamanda.de/v1`; it can be changed for another Teamanda deployment. The
+connection test calls `GET /connection` and needs no permission beyond a valid key.
 
-## Verwendung
+## Usage
 
-Listen-Operationen unterstützen `Alle Zurückgeben`, Paginierung und ihre jeweiligen Filter.
-Das Löschen eines Zeiteintrags archiviert ihn. Das Erstellen von Zeiteinträgen und Aufgaben
-ist nicht idempotent, also nach einem unklaren Timeout nicht automatisch wiederholen.
+List operations support `Return All`, pagination, and their resource-specific filters.
+Deleting a time entry archives it. Creating time entries and tasks is not idempotent, so do
+not automatically retry it after an ambiguous timeout.
 
-Datums- und Zeitwerte ohne Offset werden in der Zeitzone des Workflows gelesen und als UTC
-an die API gesendet.
+Date and time values without an offset are read in the workflow's timezone and sent to the
+API as UTC.
 
-Die eingecheckten API-Typen werden aus Teamandas OpenAPI-Dokument erzeugt. Maintainer
-aktualisieren sie mit `pnpm api:update`; ein normaler Build braucht keinen Netzwerkzugriff.
-Jedes Request-Routing verweist über die erzeugten Typen auf seine Operation, sodass ein
-Endpoint oder Parameter, den Teamanda umbenennt, den Build scheitern lässt.
+The checked-in API types are generated from Teamanda's OpenAPI document. Maintainers can
+refresh them with `pnpm api:update`; normal builds do not require network access. Every
+request routing refers to its operation through the generated types, so an endpoint or
+parameter that Teamanda renames fails the build.
 
-## Ressourcen
+## Resources
 
-- [Dokumentation zu n8n-Community-Nodes](https://docs.n8n.io/integrations/#community-nodes)
-- [Teamanda-API-Dokumentation](https://api.teamanda.de/v1/docs)
+- [n8n community nodes documentation](https://docs.n8n.io/integrations/#community-nodes)
+- [Teamanda API documentation](https://api.teamanda.de/v1/docs)
 
-## Versionsverlauf
+## Version history
 
-- 0.1.0: Erste Version des Teamanda-Community-Nodes.
+- 0.1.0: Initial Teamanda community node.
