@@ -12,7 +12,7 @@ import {
 	type OperationId,
 	type Query,
 } from '../../api';
-import type { LoadOptionsMethod } from '../../loadOptions';
+import type { ListSearchMethod, LoadOptionsMethod } from '../../loadOptions';
 
 export type ResourceName =
 	| 'absence'
@@ -42,10 +42,10 @@ export type ResourceSpec = {
 		/** Parameter holding the record's ID, e.g. `employeeId`. */
 		idParameter: string;
 		idDisplayName: string;
-		/** Description of the ID field, e.g. `ID of the employee`. Ignored for a dropdown. */
+		/** Description of the ID field, e.g. `ID of the employee`. Ignored for a resource locator. */
 		idDescription?: string;
-		/** Offers the IDs as a dropdown instead of a text field. */
-		idLoadOptionsMethod?: LoadOptionsMethod;
+		/** Offers the record as a resource locator instead of a text field. */
+		idListSearchMethod?: ListSearchMethod;
 		/** Operations the ID field is shown for. Defaults to Get alone. */
 		idOperations?: string[];
 	};
@@ -118,10 +118,9 @@ export function resourceProperties(spec: ResourceSpec): INodeProperties[] {
 					{
 						displayName: get.idDisplayName,
 						name: get.idParameter,
-						type: 'string' as const,
-						default: '',
-						description: get.idDescription,
-						...(get.idLoadOptionsMethod && dropdown(get.idLoadOptionsMethod)),
+						...(get.idListSearchMethod
+							? locator(get.idListSearchMethod)
+							: { type: 'string' as const, default: '', description: get.idDescription }),
 						required: true,
 						displayOptions: {
 							show: { operation: get.idOperations ?? ['get'], resource: [resource] },
@@ -178,6 +177,29 @@ function simplifyProperty(
 			},
 		},
 		routing: { output: { postReceive: [simplify] } },
+	};
+}
+
+/** Picks a single record from `method`'s list, or takes its ID. */
+export function locator(method: ListSearchMethod) {
+	return {
+		type: 'resourceLocator' as const,
+		default: { mode: 'list', value: '' },
+		modes: [
+			{
+				displayName: 'From List',
+				name: 'list',
+				type: 'list' as const,
+				// `/tasks` has no search parameter.
+				typeOptions: { searchListMethod: method, searchable: method !== 'searchTasks' },
+			},
+			{
+				displayName: 'By ID',
+				name: 'id',
+				type: 'string' as const,
+				placeholder: 'e.g. 3f2b8c1e-7a4d-4e9b-9c2a-1d5e6f7a8b9c',
+			},
+		],
 	};
 }
 

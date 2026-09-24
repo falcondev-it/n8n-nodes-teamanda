@@ -1,8 +1,13 @@
-import type { ILoadOptionsFunctions, INodePropertyOptions } from 'n8n-workflow';
+import type {
+	ILoadOptionsFunctions,
+	INodeListSearchResult,
+	INodePropertyOptions,
+} from 'n8n-workflow';
 import { PAGE_SIZE, type Body } from './api';
 import type { paths } from './generated/api-types';
 
-type ListPath = Extract<keyof paths, `/options/${string}` | '/employee-fields'>;
+type ListPath = Extract<keyof paths, `/options/${string}` | '/employee-fields' | '/tasks'>;
+type OptionsPath = Extract<ListPath, `/options/${string}`>;
 
 type Item<P extends ListPath> = paths[P]['get'] extends {
 	responses: { 200: { content: { 'application/json': { items: Array<infer I> } } } };
@@ -10,26 +15,50 @@ type Item<P extends ListPath> = paths[P]['get'] extends {
 	? I
 	: never;
 
+async function fetchPage<P extends ListPath>(
+	context: ILoadOptionsFunctions,
+	path: P,
+	qs: { offset: number; search?: string },
+): Promise<{ items: Array<Item<P>>; hasMore: boolean }> {
+	const { baseUrl } = await context.getCredentials<{ baseUrl: string }>('teamandaApi');
+	return (await context.helpers.httpRequestWithAuthentication.call(context, 'teamandaApi', {
+		method: 'GET',
+		baseURL: baseUrl,
+		url: path,
+		qs: { limit: PAGE_SIZE, ...qs },
+		json: true,
+	})) as { items: Array<Item<P>>; hasMore: boolean };
+}
+
 async function fetchAll<P extends ListPath>(
 	context: ILoadOptionsFunctions,
 	path: P,
 ): Promise<Array<Item<P>>> {
-	const { baseUrl } = await context.getCredentials<{ baseUrl: string }>('teamandaApi');
 	const items: Array<Item<P>> = [];
 	for (let offset = 0; ; offset += PAGE_SIZE) {
-		const page = (await context.helpers.httpRequestWithAuthentication.call(context, 'teamandaApi', {
-			method: 'GET',
-			baseURL: baseUrl,
-			url: path,
-			qs: { limit: PAGE_SIZE, offset },
-			json: true,
-		})) as { items: Array<Item<P>>; hasMore: boolean };
+		const page = await fetchPage(context, path, { offset });
 		items.push(...page.items);
 		if (!page.hasMore) return items;
 	}
 }
 
-function fromOptionsEndpoint(path: Extract<ListPath, `/options/${string}`>) {
+/** One page per call; n8n hands the token back to load the next page. */
+function searchOptionsEndpoint(path: OptionsPath) {
+	return async function (
+		this: ILoadOptionsFunctions,
+		filter?: string,
+		paginationToken?: string,
+	): Promise<INodeListSearchResult> {
+		const offset = Number(paginationToken ?? 0);
+		const page = await fetchPage(this, path, { offset, search: filter || undefined });
+		return {
+			results: page.items.map(({ value, label }) => ({ name: label, value })),
+			paginationToken: page.hasMore ? String(offset + PAGE_SIZE) : undefined,
+		};
+	};
+}
+
+function fromOptionsEndpoint(path: OptionsPath) {
 	return async function (this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 		const items = await fetchAll(this, path);
 		return items.map(({ value, label }) => ({ name: label, value }));
@@ -47,9 +76,7 @@ const workTypeLabels: Record<Body<'createTimeEntry'>['type'], string> = {
 };
 
 export const loadOptions = {
-	getCostCenters: fromOptionsEndpoint('/options/cost-centers'),
 	getEmployees: fromOptionsEndpoint('/options/employees'),
-	getProjects: fromOptionsEndpoint('/options/projects'),
 	getResources: fromOptionsEndpoint('/options/workspaces'),
 	getTaskCategories: fromOptionsEndpoint('/options/task-categories'),
 	getTeams: fromOptionsEndpoint('/options/teams'),
@@ -70,3 +97,28 @@ export const loadOptions = {
 };
 
 export type LoadOptionsMethod = keyof typeof loadOptions;
+
+export const listSearch = {
+	searchCostCenters: searchOptionsEndpoint('/options/cost-centers'),
+	searchEmployees: searchOptionsEndpoint('/options/employees'),
+	searchProjects: searchOptionsEndpoint('/options/projects'),
+	searchResources: searchOptionsEndpoint('/options/workspaces'),
+	searchTaskCategories: searchOptionsEndpoint('/options/task-categories'),
+	async searchTasks(
+		this: ILoadOptionsFunctions,
+		_filter?: string,
+		paginationToken?: string,
+	): Promise<INodeListSearchResult> {
+		const offset = Number(paginationToken ?? 0);
+		const page = await fetchPage(this, '/tasks', { offset });
+		return {
+			results: page.items.map(({ id, taskNumber, title }) => ({
+				name: `#${taskNumber} ${title}`,
+				value: id,
+			})),
+			paginationToken: page.hasMore ? String(offset + PAGE_SIZE) : undefined,
+		};
+	},
+};
+
+export type ListSearchMethod = keyof typeof listSearch;

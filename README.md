@@ -32,8 +32,9 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 - Task: Create, Get, Get Many, Update
 - Time Entry: Create, Delete, Get, Get Many
 
-Employees, teams, projects, cost centers, work types, resources, task categories, and employee
-fields are offered as dropdowns loaded from the API.
+Single employees, resources, tasks, task categories, projects, and cost centers are picked
+from a list or entered by ID. Teams, work types, and employee fields are offered as
+dropdowns loaded from the API.
 
 ## Credentials
 

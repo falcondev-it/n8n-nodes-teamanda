@@ -14,8 +14,8 @@ export const resourceDescription: INodeProperties[] = [
 		get: {
 			noun: 'resource',
 			idParameter: 'resourceId',
-			idDisplayName: 'Resource Name or ID',
-			idLoadOptionsMethod: 'getResources',
+			idDisplayName: 'Resource',
+			idListSearchMethod: 'searchResources',
 		},
 	}),
 	filterProperties('resource', [updatedSinceFilter<'listResources'>()]),

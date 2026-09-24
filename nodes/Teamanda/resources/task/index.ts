@@ -2,8 +2,8 @@ import type { IDataObject, INodeProperties, PreSendAction } from 'n8n-workflow';
 import { queryRouting, toOptions, toUtc, UTC_INSTANT, type Body } from '../../api';
 import {
 	archivedFilter,
-	dropdown,
 	filterProperties,
+	locator,
 	multiDropdown,
 	resourceProperties,
 	sortProperty,
@@ -28,8 +28,10 @@ const sendCreateBody: PreSendAction = async function (requestOptions) {
 	const plannedAt = additionalFields.plannedAt as string | undefined;
 	const body: CreateTaskBody = {
 		title: this.getNodeParameter('title') as string,
-		categoryId: this.getNodeParameter('categoryId') as string,
-		assignedUserId: this.getNodeParameter('assignedUserId') as string,
+		categoryId: this.getNodeParameter('categoryId', undefined, { extractValue: true }) as string,
+		assignedUserId: this.getNodeParameter('assignedUserId', undefined, {
+			extractValue: true,
+		}) as string,
 		description: (additionalFields.description as string) || null,
 		plannedAt: plannedAt ? toUtc(plannedAt, this.getTimezone()) : null,
 	};
@@ -40,15 +42,15 @@ const sendCreateBody: PreSendAction = async function (requestOptions) {
 const showOnlyForCreate = { operation: ['create'], resource: ['task'] };
 
 const categoryField: INodeProperties = {
-	displayName: 'Category Name or ID',
+	displayName: 'Category',
 	name: 'categoryId',
-	...dropdown('getTaskCategories'),
+	...locator('searchTaskCategories'),
 };
 
 const assigneeField: INodeProperties = {
-	displayName: 'Assignee Name or ID',
+	displayName: 'Assignee',
 	name: 'assignedUserId',
-	...dropdown('getEmployees'),
+	...locator('searchEmployees'),
 };
 
 export const taskDescription: INodeProperties[] = [
@@ -59,8 +61,8 @@ export const taskDescription: INodeProperties[] = [
 		get: {
 			noun: 'task',
 			idParameter: 'taskId',
-			idDisplayName: 'Task ID',
-			idDescription: 'ID of the task',
+			idDisplayName: 'Task',
+			idListSearchMethod: 'searchTasks',
 			idOperations: ['get', 'update'],
 		},
 		simplifiedFields: [

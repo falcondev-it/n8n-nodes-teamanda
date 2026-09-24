@@ -1,5 +1,5 @@
 import { NodeConnectionTypes, type INodeType, type INodeTypeDescription } from 'n8n-workflow';
-import { loadOptions } from './loadOptions';
+import { listSearch, loadOptions } from './loadOptions';
 import { absenceDescription } from './resources/absence';
 import { attendanceDescription } from './resources/attendance';
 import { dailyReportDescription } from './resources/dailyReport';
@@ -81,5 +81,5 @@ export class Teamanda implements INodeType {
 		],
 	};
 
-	methods = { loadOptions };
+	methods = { listSearch, loadOptions };
 }

@@ -1,7 +1,7 @@
 import type { INodeProperties } from 'n8n-workflow';
 import { queryRouting } from '../../api';
 import {
-	dropdown,
+	locator,
 	filterProperties,
 	resourceProperties,
 	sortProperty,
@@ -25,9 +25,9 @@ export const resourceBookingDescription: INodeProperties[] = [
 		...windowFilters<'listResourceBookings'>('dateTime'),
 		updatedSinceFilter<'listResourceBookings'>(),
 		{
-			displayName: 'Resource Name or ID',
+			displayName: 'Resource',
 			name: 'resourceId',
-			...dropdown('getResources'),
+			...locator('searchResources'),
 			routing: queryRouting<'listResourceBookings'>('resourceId'),
 		},
 	]),

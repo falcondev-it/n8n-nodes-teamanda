@@ -23,8 +23,8 @@ export const employeeDescription: INodeProperties[] = [
 		get: {
 			noun: 'employee',
 			idParameter: 'employeeId',
-			idDisplayName: 'Employee Name or ID',
-			idLoadOptionsMethod: 'getEmployees',
+			idDisplayName: 'Employee',
+			idListSearchMethod: 'searchEmployees',
 			idOperations: ['get', 'getWage'],
 		},
 		extraOperations: [

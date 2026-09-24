@@ -1,10 +1,16 @@
-import type { IDataObject, INodeProperties, PreSendAction } from 'n8n-workflow';
+import type {
+	IDataObject,
+	IExecuteSingleFunctions,
+	INodeProperties,
+	PreSendAction,
+} from 'n8n-workflow';
 import { queryRouting, toUtc, type Body } from '../../api';
 import {
 	archivedFilter,
 	dropdown,
 	employeesFilter,
 	filterProperties,
+	locator,
 	multiDropdown,
 	resourceProperties,
 	sortProperty,
@@ -14,17 +20,22 @@ import {
 
 type CreateTimeEntryBody = Body<'createTimeEntry'>;
 
+function optionalId(this: IExecuteSingleFunctions, field: string): string | null {
+	const path = `additionalFields.${field}`;
+	return (this.getNodeParameter(path, '', { extractValue: true }) as string) || null;
+}
+
 // The API requires costCenterId/projectId/tagId/description to be present, so the whole body is
 // assembled here with explicit nulls instead of per-field send routings.
 const sendCreateBody: PreSendAction = async function (requestOptions) {
 	const additionalFields = this.getNodeParameter('additionalFields', {}) as IDataObject;
 	const body: CreateTimeEntryBody = {
-		userId: this.getNodeParameter('employeeId') as string,
+		userId: this.getNodeParameter('employeeId', undefined, { extractValue: true }) as string,
 		type: this.getNodeParameter('type') as CreateTimeEntryBody['type'],
 		startDate: toUtc(this.getNodeParameter('startDate'), this.getTimezone()),
 		endDate: toUtc(this.getNodeParameter('endDate'), this.getTimezone()),
-		costCenterId: (additionalFields.costCenterId as string) || null,
-		projectId: (additionalFields.projectId as string) || null,
+		costCenterId: optionalId.call(this, 'costCenterId'),
+		projectId: optionalId.call(this, 'projectId'),
 		tagId: (additionalFields.tagId as string) || null,
 		description: (additionalFields.description as string) || null,
 	};
@@ -85,9 +96,9 @@ export const timeEntryDescription: INodeProperties[] = [
 		],
 	}),
 	{
-		displayName: 'Employee Name or ID',
+		displayName: 'Employee',
 		name: 'employeeId',
-		...dropdown('getEmployees'),
+		...locator('searchEmployees'),
 		required: true,
 		displayOptions: { show: showOnlyForCreate },
 	},
@@ -127,14 +138,14 @@ export const timeEntryDescription: INodeProperties[] = [
 			{ displayName: 'Description', name: 'description', type: 'string', default: '' },
 			{ displayName: 'NFC Tag ID', name: 'tagId', type: 'string', default: '' },
 			{
-				displayName: 'Cost Center Name or ID',
+				displayName: 'Cost Center',
 				name: 'costCenterId',
-				...dropdown('getCostCenters'),
+				...locator('searchCostCenters'),
 			},
 			{
-				displayName: 'Project Name or ID',
+				displayName: 'Project',
 				name: 'projectId',
-				...dropdown('getProjects'),
+				...locator('searchProjects'),
 			},
 		],
 	},
