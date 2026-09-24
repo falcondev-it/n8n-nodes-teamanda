@@ -2,7 +2,7 @@ import type { INodeProperties } from 'n8n-workflow';
 import {
 	filterProperties,
 	resourceProperties,
-	sortFilter,
+	sortProperty,
 	updatedSinceFilter,
 } from '../shared/properties';
 
@@ -18,8 +18,6 @@ export const resourceDescription: INodeProperties[] = [
 			idLoadOptionsMethod: 'getResources',
 		},
 	}),
-	filterProperties('resource', [
-		updatedSinceFilter<'listResources'>(),
-		sortFilter<'listResources'>(['name', '-name']),
-	]),
+	filterProperties('resource', [updatedSinceFilter<'listResources'>()]),
+	sortProperty<'listResources'>('resource', ['name', '-name']),
 ];

@@ -3,7 +3,7 @@ import {
 	employeesFilter,
 	filterProperties,
 	resourceProperties,
-	sortFilter,
+	sortProperty,
 	updatedSinceFilter,
 	windowFilters,
 } from '../shared/properties';
@@ -21,6 +21,6 @@ export const dailyReportDescription: INodeProperties[] = [
 	filterProperties('dailyReport', [
 		employeesFilter<'listDailyReports'>(),
 		updatedSinceFilter<'listDailyReports'>(),
-		sortFilter<'listDailyReports'>(['date', '-date']),
 	]),
+	sortProperty<'listDailyReports'>('dailyReport', ['date', '-date']),
 ];

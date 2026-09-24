@@ -5,7 +5,7 @@ import {
 	employeesFilter,
 	filterProperties,
 	resourceProperties,
-	sortFilter,
+	sortProperty,
 	updatedSinceFilter,
 	windowFilters,
 } from '../shared/properties';
@@ -61,6 +61,6 @@ export const absenceDescription: INodeProperties[] = [
 			routing: queryRouting<'listAbsenceRequests'>('status'),
 		},
 		updatedSinceFilter<'listAbsenceRequests'>(),
-		sortFilter<'listAbsenceRequests'>(['startDate', '-startDate']),
 	]),
+	sortProperty<'listAbsenceRequests'>('absence', ['startDate', '-startDate']),
 ];

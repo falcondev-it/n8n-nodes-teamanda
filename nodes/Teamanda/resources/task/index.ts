@@ -6,7 +6,7 @@ import {
 	filterProperties,
 	multiDropdown,
 	resourceProperties,
-	sortFilter,
+	sortProperty,
 	updatedSinceFilter,
 } from '../shared/properties';
 
@@ -175,6 +175,6 @@ export const taskDescription: INodeProperties[] = [
 			routing: queryRouting<'listTasks'>('status'),
 		},
 		updatedSinceFilter<'listTasks'>(),
-		sortFilter<'listTasks'>(['-taskNumber', 'taskNumber', 'updatedAt', '-updatedAt']),
 	]),
+	sortProperty<'listTasks'>('task', ['-taskNumber', 'taskNumber', 'updatedAt', '-updatedAt']),
 ];

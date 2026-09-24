@@ -5,7 +5,7 @@ import {
 	filterProperties,
 	multiDropdown,
 	resourceProperties,
-	sortFilter,
+	sortProperty,
 	updatedSinceFilter,
 } from '../shared/properties';
 
@@ -126,6 +126,12 @@ export const employeeDescription: INodeProperties[] = [
 			routing: queryRouting<'listEmployees'>('teamId'),
 		},
 		updatedSinceFilter<'listEmployees'>(),
-		sortFilter<'listEmployees'>(['id', 'displayName', '-displayName', 'updatedAt', '-updatedAt']),
+	]),
+	sortProperty<'listEmployees'>('employee', [
+		'id',
+		'displayName',
+		'-displayName',
+		'updatedAt',
+		'-updatedAt',
 	]),
 ];

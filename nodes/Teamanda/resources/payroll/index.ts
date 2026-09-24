@@ -4,7 +4,7 @@ import {
 	employeesFilter,
 	filterProperties,
 	resourceProperties,
-	sortFilter,
+	sortProperty,
 	windowFilters,
 } from '../shared/properties';
 
@@ -18,8 +18,8 @@ export const specialPaymentDescription: INodeProperties[] = [
 		archivedFilter<'listSpecialPayments'>(),
 		...windowFilters<'listSpecialPayments'>('date'),
 		employeesFilter<'listSpecialPayments'>(),
-		sortFilter<'listSpecialPayments'>(['-date', 'date']),
 	]),
+	sortProperty<'listSpecialPayments'>('specialPayment', ['-date', 'date']),
 ];
 
 export const overtimePayoutDescription: INodeProperties[] = [
@@ -32,6 +32,6 @@ export const overtimePayoutDescription: INodeProperties[] = [
 		archivedFilter<'listOvertimePayouts'>(),
 		...windowFilters<'listOvertimePayouts'>('date'),
 		employeesFilter<'listOvertimePayouts'>(),
-		sortFilter<'listOvertimePayouts'>(['-date', 'date']),
 	]),
+	sortProperty<'listOvertimePayouts'>('overtimePayout', ['-date', 'date']),
 ];

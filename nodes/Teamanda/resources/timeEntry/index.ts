@@ -7,7 +7,7 @@ import {
 	filterProperties,
 	multiDropdown,
 	resourceProperties,
-	sortFilter,
+	sortProperty,
 	updatedSinceFilter,
 	windowFilters,
 } from '../shared/properties';
@@ -133,6 +133,11 @@ export const timeEntryDescription: INodeProperties[] = [
 			routing: queryRouting<'listTimeEntries'>('type'),
 		},
 		updatedSinceFilter<'listTimeEntries'>(),
-		sortFilter<'listTimeEntries'>(['startDate', '-startDate', 'updatedAt', '-updatedAt']),
+	]),
+	sortProperty<'listTimeEntries'>('timeEntry', [
+		'startDate',
+		'-startDate',
+		'updatedAt',
+		'-updatedAt',
 	]),
 ];

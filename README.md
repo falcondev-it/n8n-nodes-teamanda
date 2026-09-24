@@ -44,7 +44,8 @@ connection test calls `GET /connection` and needs no permission beyond a valid k
 
 ## Usage
 
-List operations support `Return All`, pagination, and their resource-specific filters.
+List operations support `Return All`, pagination, their resource-specific filters, and a
+`Sort` collection.
 Deleting a time entry archives it. Creating time entries and tasks is not idempotent, so do
 not automatically retry it after an ambiguous timeout.
 

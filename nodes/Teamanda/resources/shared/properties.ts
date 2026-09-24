@@ -207,8 +207,12 @@ const sortFieldLabels: Record<SortField, string> = {
 	updatedAt: 'Updated At',
 };
 
-/** The Sort filter; the first value is the API default. */
-export function sortFilter<Id extends OperationWith<'sort'>>(
+/**
+ * The Sort collection below the filters, as n8n's UX guidelines place it. The first value is the
+ * API default.
+ */
+export function sortProperty<Id extends OperationWith<'sort'>>(
+	resource: ResourceName,
 	values: [Sort<Id>, ...Array<Sort<Id>>],
 ): INodeProperties {
 	const options = values.map((value: string) => {
@@ -219,14 +223,24 @@ export function sortFilter<Id extends OperationWith<'sort'>>(
 			value,
 		};
 	});
-	// eslint-disable-next-line n8n-nodes-base/node-param-default-missing -- default is values[0]
 	return {
 		displayName: 'Sort',
 		name: 'sort',
-		type: 'options',
-		options: options.sort((a, b) => a.name.localeCompare(b.name)),
-		default: values[0],
-		routing: queryRouting<Id>('sort'),
+		type: 'collection',
+		placeholder: 'Add Sort Order',
+		default: {},
+		displayOptions: { show: { operation: ['getAll'], resource: [resource] } },
+		options: [
+			// eslint-disable-next-line n8n-nodes-base/node-param-default-missing -- default is values[0]
+			{
+				displayName: 'Sort By',
+				name: 'sortBy',
+				type: 'options',
+				options: options.sort((a, b) => a.name.localeCompare(b.name)),
+				default: values[0],
+				routing: queryRouting<Id>('sort'),
+			},
+		],
 	};
 }
 

@@ -6,7 +6,7 @@ import {
 	filterProperties,
 	multiDropdown,
 	resourceProperties,
-	sortFilter,
+	sortProperty,
 	updatedSinceFilter,
 	windowFilters,
 } from '../shared/properties';
@@ -28,6 +28,6 @@ export const workspaceEntryDescription: INodeProperties[] = [
 			routing: queryRouting<'listWorkspaceEntries'>('resourceId'),
 		},
 		updatedSinceFilter<'listWorkspaceEntries'>(),
-		sortFilter<'listWorkspaceEntries'>(['startDate', '-startDate']),
 	]),
+	sortProperty<'listWorkspaceEntries'>('workspaceEntry', ['startDate', '-startDate']),
 ];

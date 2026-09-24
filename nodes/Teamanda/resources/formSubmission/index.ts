@@ -4,7 +4,7 @@ import {
 	archivedFilter,
 	filterProperties,
 	resourceProperties,
-	sortFilter,
+	sortProperty,
 	updatedSinceFilter,
 } from '../shared/properties';
 
@@ -45,6 +45,11 @@ export const formSubmissionDescription: INodeProperties[] = [
 			routing: queryRouting<'listFormSubmissions'>('templateId'),
 		},
 		updatedSinceFilter<'listFormSubmissions'>(),
-		sortFilter<'listFormSubmissions'>(['-createdAt', 'createdAt', 'updatedAt', '-updatedAt']),
+	]),
+	sortProperty<'listFormSubmissions'>('formSubmission', [
+		'-createdAt',
+		'createdAt',
+		'updatedAt',
+		'-updatedAt',
 	]),
 ];

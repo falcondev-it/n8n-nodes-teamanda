@@ -4,7 +4,7 @@ import {
 	dropdown,
 	filterProperties,
 	resourceProperties,
-	sortFilter,
+	sortProperty,
 	updatedSinceFilter,
 	windowFilters,
 } from '../shared/properties';
@@ -30,6 +30,6 @@ export const resourceBookingDescription: INodeProperties[] = [
 			...dropdown('getResources'),
 			routing: queryRouting<'listResourceBookings'>('resourceId'),
 		},
-		sortFilter<'listResourceBookings'>(['startDate', '-startDate']),
 	]),
+	sortProperty<'listResourceBookings'>('resourceBooking', ['startDate', '-startDate']),
 ];
