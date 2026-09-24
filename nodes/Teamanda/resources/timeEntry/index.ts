@@ -43,15 +43,15 @@ export const timeEntryDescription: INodeProperties[] = [
 			noun: 'time entry',
 			idParameter: 'timeEntryId',
 			idDisplayName: 'Time Entry ID',
-			idDescription: 'UUID of the time entry',
+			idDescription: 'ID of the time entry',
 			idOperations: ['delete', 'get'],
 		},
 		extraOperations: [
 			{
 				name: 'Create',
 				value: 'create',
-				action: 'Create a time entry',
-				description: 'Create a completed time entry',
+				action: 'Create time entry',
+				description: 'Create a new completed time entry',
 				routing: {
 					request: { method: 'POST', url: '/time-entries' },
 					send: { preSend: [sendCreateBody] },
@@ -60,8 +60,8 @@ export const timeEntryDescription: INodeProperties[] = [
 			{
 				name: 'Delete',
 				value: 'delete',
-				action: 'Delete a time entry',
-				description: 'Archive a time entry',
+				action: 'Delete time entry',
+				description: 'Delete a time entry. Teamanda keeps it as archived.',
 				routing: {
 					request: { method: 'DELETE', url: '=/time-entries/{{$parameter.timeEntryId}}' },
 				},

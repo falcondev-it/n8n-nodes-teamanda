@@ -60,22 +60,22 @@ export const taskDescription: INodeProperties[] = [
 			noun: 'task',
 			idParameter: 'taskId',
 			idDisplayName: 'Task ID',
-			idDescription: 'UUID of the task',
+			idDescription: 'ID of the task',
 			idOperations: ['get', 'update'],
 		},
 		extraOperations: [
 			{
 				name: 'Update',
 				value: 'update',
-				action: 'Update a task',
+				action: 'Update task',
 				description: 'Change only the given fields of a task',
 				routing: { request: { method: 'PATCH', url: '=/tasks/{{$parameter.taskId}}' } },
 			},
 			{
 				name: 'Create',
 				value: 'create',
-				action: 'Create a task',
-				description: 'Create a task. Not idempotent.',
+				action: 'Create task',
+				description: 'Create a new task. Not idempotent.',
 				routing: {
 					request: { method: 'POST', url: '/tasks' },
 					send: { preSend: [sendCreateBody] },

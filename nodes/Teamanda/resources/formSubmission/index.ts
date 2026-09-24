@@ -22,7 +22,7 @@ export const formSubmissionDescription: INodeProperties[] = [
 			noun: 'form submission',
 			idParameter: 'formSubmissionId',
 			idDisplayName: 'Form Submission ID',
-			idDescription: 'UUID of the form submission. Also returns the field values.',
+			idDescription: 'ID of the form submission. Also returns the field values.',
 		},
 	}),
 	filterProperties('formSubmission', [
@@ -41,7 +41,7 @@ export const formSubmissionDescription: INodeProperties[] = [
 			type: 'string',
 			typeOptions: { multipleValues: true },
 			default: [],
-			description: 'UUIDs of the form templates the submissions come from',
+			description: 'IDs of the form templates the submissions come from',
 			routing: queryRouting<'listFormSubmissions'>('templateId'),
 		},
 		updatedSinceFilter<'listFormSubmissions'>(),

@@ -31,7 +31,7 @@ export const employeeDescription: INodeProperties[] = [
 			{
 				name: 'Get Wage',
 				value: 'getWage',
-				action: 'Get the wage of an employee',
+				action: 'Get employee wage',
 				description: 'Get the wage rate from the employment contract valid on the reference date',
 				routing: {
 					request: { method: 'GET', url: '=/employees/{{$parameter.employeeId}}/wage' },

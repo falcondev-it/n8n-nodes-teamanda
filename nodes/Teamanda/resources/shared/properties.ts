@@ -34,10 +34,10 @@ export type ResourceSpec = {
 	get?: {
 		/** Singular lowercase noun, e.g. `employee`. */
 		noun: string;
-		/** Parameter holding the record's UUID, e.g. `employeeId`. */
+		/** Parameter holding the record's ID, e.g. `employeeId`. */
 		idParameter: string;
 		idDisplayName: string;
-		/** Description of the ID field, e.g. `UUID of the employee`. Ignored for a dropdown. */
+		/** Description of the ID field, e.g. `ID of the employee`. Ignored for a dropdown. */
 		idDescription?: string;
 		/** Offers the IDs as a dropdown instead of a text field. */
 		idLoadOptionsMethod?: LoadOptionsMethod;
@@ -58,7 +58,7 @@ export function resourceProperties(spec: ResourceSpec): INodeProperties[] {
 			name: 'Get Many',
 			value: 'getAll',
 			action: `Get many ${nounPlural}`,
-			description: `Get many ${nounPlural}`,
+			description: `Retrieve a list of ${nounPlural}`,
 			routing: {
 				request: { method: 'GET', url: path },
 				// Lists answer `{ items, hasMore }`; emit one n8n item per record instead.
@@ -87,8 +87,8 @@ export function resourceProperties(spec: ResourceSpec): INodeProperties[] {
 		operations.push({
 			name: 'Get',
 			value: 'get',
-			action: `Get ${article} ${get.noun}`,
-			description: `Get ${article} ${get.noun}`,
+			action: `Get ${get.noun}`,
+			description: `Retrieve ${article} ${get.noun}`,
 			routing: { request: { method: 'GET', url: `=${path}/{{$parameter.${get.idParameter}}}` } },
 		});
 	}

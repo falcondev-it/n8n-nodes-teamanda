@@ -27,7 +27,7 @@ export const absenceDescription: INodeProperties[] = [
 			noun: 'absence request',
 			idParameter: 'absenceRequestId',
 			idDisplayName: 'Absence Request ID',
-			idDescription: 'UUID of the absence request',
+			idDescription: 'ID of the absence request',
 		},
 		extraOperations: [
 			{

@@ -18,7 +18,7 @@ export const resourceBookingDescription: INodeProperties[] = [
 			noun: 'resource booking',
 			idParameter: 'bookingId',
 			idDisplayName: 'Booking ID',
-			idDescription: 'UUID of the resource booking',
+			idDescription: 'ID of the resource booking',
 		},
 	}),
 	filterProperties('resourceBooking', [
