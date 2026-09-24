@@ -4,6 +4,13 @@
 	"description": "n8n community node for the Teamanda API",
 	"license": "MIT",
 	"packageManager": "pnpm@11.25.0",
+	"devEngines": {
+		"runtime": {
+			"name": "node",
+			"version": "24",
+			"onFail": "warn"
+		}
+	},
 	"homepage": "https://github.com/falcondev-it/n8n-nodes-teamanda#readme",
 	"keywords": [
 		"n8n-community-node-package"
@@ -23,8 +30,6 @@
 		"dev": "n8n-node dev",
 		"lint": "n8n-node lint",
 		"lint:fix": "n8n-node lint --fix",
-		"release": "n8n-node release",
-		"prepublishOnly": "n8n-node prerelease",
 		"type-check": "tsc --noEmit"
 	},
 	"files": [
@@ -45,10 +50,12 @@
 		"eslint": "9.32.0",
 		"openapi-typescript": "^7.13.0",
 		"prettier": "3.6.2",
-		"release-it": "^19.0.4",
 		"typescript": "5.9.2"
 	},
 	"peerDependencies": {
 		"n8n-workflow": "*"
+	},
+	"changelogithub": {
+		"extends": "gh:falcondev-it/configs/changelogithub"
 	}
 }

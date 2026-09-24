@@ -1,0 +1,39 @@
+name: 🚥 CI/CD
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['**']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: 💅 Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: pnpm install
+        uses: falcondev-it/.github/actions/pnpm-install@master
+
+      - run: pnpm run lint
+
+  type-check:
+    name: 🛃 Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: pnpm install
+        uses: falcondev-it/.github/actions/pnpm-install@master
+
+      - run: pnpm run type-check
+
+  build:
+    name: 📦 Build
+    needs: [type-check]
+    runs-on: ubuntu-latest
+    steps:
+      - name: pnpm install
+        uses: falcondev-it/.github/actions/pnpm-install@master
+
+      - run: pnpm run build
