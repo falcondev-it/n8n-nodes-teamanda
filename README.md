@@ -21,10 +21,11 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 - Absence: Get, Get Absent Employees, Get Many
 - Attendance: Get Many
 - Daily Report: Get Many
-- Employee: Get, Get Many, Get Wage
+- Employee: Get, Get Many
 - Employee Field: Get Many
 - Form Submission: Get, Get Many
 - Overtime Payout: Get Many
+- Pay Rate: Get Many
 - Resource: Get, Get Many
 - Resource Booking: Get, Get Many
 - Resource Entry: Get Many

@@ -1,5 +1,5 @@
 import type { INodeProperties } from 'n8n-workflow';
-import { CALENDAR_DATE, queryRouting, toOptions, type Query } from '../../api';
+import { queryRouting, toOptions, type Query } from '../../api';
 import {
 	dropdown,
 	filterProperties,
@@ -25,38 +25,8 @@ export const employeeDescription: INodeProperties[] = [
 			idParameter: 'employeeId',
 			idDisplayName: 'Employee',
 			idListSearchMethod: 'searchEmployees',
-			idOperations: ['get', 'getWage'],
 		},
-		extraOperations: [
-			{
-				name: 'Get Wage',
-				value: 'getWage',
-				action: 'Get employee wage',
-				description: 'Get the wage rate from the employment contract valid on the reference date',
-				routing: {
-					request: { method: 'GET', url: '=/employees/{{$parameter.employeeId}}/wage' },
-				},
-			},
-		],
 	}),
-	{
-		displayName: 'Options',
-		name: 'wageOptions',
-		type: 'collection',
-		placeholder: 'Add Option',
-		default: {},
-		displayOptions: { show: { operation: ['getWage'], resource: ['employee'] } },
-		options: [
-			{
-				displayName: 'Reference Date',
-				name: 'date',
-				type: 'dateTime',
-				default: '',
-				description: 'Day whose contract applies. Defaults to today.',
-				routing: queryRouting<'getEmployeeWage'>('date', CALENDAR_DATE),
-			},
-		],
-	},
 	filterProperties('employee', [
 		{
 			displayName: 'Filter by Attributes',

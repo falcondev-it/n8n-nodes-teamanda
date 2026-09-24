@@ -3,8 +3,8 @@
 ## 0.1.0
 
 - Initial Teamanda community node with Absence, Attendance, Daily Report, Employee, Employee
-  Field, Form Submission, Overtime Payout, Resource, Resource Booking, Special Payment, Task,
-  Time Entry and Resource Entry resources, including the employee wage operation.
+  Field, Form Submission, Overtime Payout, Pay Rate, Resource, Resource Booking, Special
+  Payment, Task, Time Entry and Resource Entry resources.
 - Single employees, resources, tasks, task categories, projects and cost centers are picked
   through resource locators. Teams, employee fields and the organization's enabled work types
   are offered as dropdowns.

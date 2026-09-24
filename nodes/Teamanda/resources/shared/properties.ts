@@ -22,6 +22,7 @@ export type ResourceName =
 	| 'employeeField'
 	| 'formSubmission'
 	| 'overtimePayout'
+	| 'payRate'
 	| 'resource'
 	| 'resourceBooking'
 	| 'specialPayment'

@@ -13,7 +13,7 @@ export interface paths {
 		};
 		/**
 		 * Describe the current connection
-		 * @description Identifies the API key, its organization, its granted permissions and the organization’s enabled modules. Requires no domain permission, so it is the endpoint to use for a credential test. A `targetTeamIds` of `null` means the grant covers the whole organization.
+		 * @description Requires no permission, so it is the endpoint to use for a credential test.
 		 */
 		get: operations['getConnection'];
 		put?: never;
@@ -33,7 +33,7 @@ export interface paths {
 		};
 		/**
 		 * List employee fields
-		 * @description Lists the public employee fields of the organization. `key` is what `GET /employees` returns inside `attributes`, selects through `fields` and filters on through `attributes[key]`. Private fields are never listed. `label` falls back to `key` when the organization has no translation in the requested language.
+		 * @description Lists the public employee fields; private fields are never listed.
 		 */
 		get: operations['listEmployeeFields'];
 		put?: never;
@@ -53,13 +53,13 @@ export interface paths {
 		};
 		/**
 		 * List employment contracts
-		 * @description Requires manage_employment_contracts_for_others. Returns contracts only for employees within the key’s team scope, including contract notes and pay settings.
+		 * @description Requires `manage_employment_contracts_for_others`. Returns contracts only for employees within the key’s team scope.
 		 */
 		get: operations['listEmploymentContracts'];
 		put?: never;
 		/**
 		 * Create an employment contract
-		 * @description Creates a contract with nested pay, absence and work-time settings. Requires manage_employment_contracts_for_others for the employee. Dates are inclusive. Use null for absent settings. Each employee can have only one contract per start date.
+		 * @description Requires `manage_employment_contracts_for_others` for the employee. Each employee can have only one contract per start date.
 		 */
 		post: operations['createEmploymentContract'];
 		delete?: never;
@@ -79,13 +79,13 @@ export interface paths {
 		get: operations['getEmploymentContract'];
 		/**
 		 * Replace an employment contract
-		 * @description Replaces every editable field and nested setting. The employee cannot change. Null removes a settings section. Requires manage_employment_contracts_for_others for the employee.
+		 * @description Requires `manage_employment_contracts_for_others` for the employee. Replaces every field except the employee; `null` removes a settings section.
 		 */
 		put: operations['updateEmploymentContract'];
 		post?: never;
 		/**
 		 * Delete an employment contract
-		 * @description Permanently deletes the contract and nested settings, retaining its audit history. Recalculates affected balances. Repeating a successful deletion returns 404.
+		 * @description Deletes the contract permanently, keeping its audit history, and recalculates affected balances. Repeating the request returns 404.
 		 */
 		delete: operations['deleteEmploymentContract'];
 		options?: never;
@@ -100,15 +100,12 @@ export interface paths {
 			path?: never;
 			cookie?: never;
 		};
-		/**
-		 * List tasks
-		 * @description `updatedSince` filters on `updatedAt >= updatedSince` inclusive.
-		 */
+		/** List tasks */
 		get: operations['listTasks'];
 		put?: never;
 		/**
 		 * Create a task
-		 * @description Creates one task on every call and is not idempotent: retrying after a timeout creates a second task. Tasks written through this API are authored by the employee who created the API key, because a task and its status comments have no anonymous author. Revoking that employee does not retroactively change tasks already written. Attachments cannot be sent through this API.
+		 * @description Not idempotent: retrying after a timeout creates a second task. Tasks and status comments written through this API are authored by the employee who created the API key. Revoking that employee does not change tasks already written. Attachments cannot be sent through this API.
 		 */
 		post: operations['createTask'];
 		delete?: never;
@@ -133,7 +130,7 @@ export interface paths {
 		head?: never;
 		/**
 		 * Update a task
-		 * @description Updates only the fields present in the body. A `status` change also records a status comment, as it does in the app. Tasks written through this API are authored by the employee who created the API key, because a task and its status comments have no anonymous author. Revoking that employee does not retroactively change tasks already written.
+		 * @description Updates only the fields present in the body. A `status` change also records a status comment. Tasks and status comments written through this API are authored by the employee who created the API key. Revoking that employee does not change tasks already written.
 		 */
 		patch: operations['updateTask'];
 		trace?: never;
@@ -147,13 +144,13 @@ export interface paths {
 		};
 		/**
 		 * List time entries
-		 * @description `updatedSince` filters on `updatedAt >= updatedSince` inclusive. A deleted entry is archived rather than removed, so it stays visible under `archived=true` and an entry archived after it was last read only reappears in an `updatedSince` page when `archived` matches.
+		 * @description A deleted entry is archived, so it only reappears in an `updatedSince` page under `archived=true`.
 		 */
 		get: operations['listTimeEntries'];
 		put?: never;
 		/**
 		 * Create a time entry
-		 * @description Creates one new time entry on every call and is not idempotent: no overlap or collision check runs, so retrying after a timeout creates a duplicate. Retry the complete day-window delete-then-create import instead. Work-time rounding may rewrite the submitted timestamps, so the response contains the stored entry.
+		 * @description Not idempotent and without an overlap check: retrying after a timeout creates a duplicate. Retry the complete day-window delete-then-create import instead. Work-time rounding may rewrite the submitted timestamps.
 		 */
 		post: operations['createTimeEntry'];
 		delete?: never;
@@ -175,7 +172,7 @@ export interface paths {
 		post?: never;
 		/**
 		 * Delete a time entry
-		 * @description Archives the time entry without deleting its version history. Repeating a successful request leaves the original archived timestamp unchanged. Calculator-authored entries cannot be deleted through this API.
+		 * @description Archives the entry and keeps its version history. Repeating the request keeps the original `archivedAt`. Calculator-authored entries cannot be deleted.
 		 */
 		delete: operations['deleteTimeEntry'];
 		options?: never;
@@ -192,7 +189,7 @@ export interface paths {
 		};
 		/**
 		 * List employees
-		 * @description `fields` narrows the returned `attributes` map to the named employee fields; unknown or private keys are dropped rather than rejected. `attributes[key]=value` filters on exact equality and must name a public field. `search` matches `displayName` and `fullName` case-insensitively. `updatedSince` filters on `updatedAt >= updatedSince` inclusive and tracks the employee record, not the approval of an individual field value.
+		 * @description Unknown or private keys in `fields` are dropped, in `attributes` they are rejected. Approving a field value does not move `updatedAt`.
 		 */
 		get: operations['listEmployees'];
 		put?: never;
@@ -229,7 +226,7 @@ export interface paths {
 		};
 		/**
 		 * List resources
-		 * @description Lists every Ressource of the organization, including archived ones (`archivedAt` set). `updatedSince` filters on `updatedAt >= updatedSince` inclusive and tracks the Ressource itself, never its embedded stubs. The embedded `location` is a snapshot of the Standort at the time of the request; there is no locations collection to re-join against. Renaming a Ressource or Standort does not bump the `updatedAt` of the bookings that embed it.
+		 * @description Includes archived Ressourcen. There is no locations collection to re-join the embedded `location` snapshot against. Renaming a Ressource or Standort does not move the `updatedAt` of the bookings that embed it.
 		 */
 		get: operations['listResources'];
 		put?: never;
@@ -249,7 +246,7 @@ export interface paths {
 		};
 		/**
 		 * Get a resource
-		 * @description The embedded `location` is a snapshot of the Standort at the time of the request; there is no locations collection to re-join against. Renaming a Ressource or Standort does not bump the `updatedAt` of the bookings that embed it.
+		 * @description There is no locations collection to re-join the embedded `location` snapshot against. Renaming a Ressource or Standort does not move the `updatedAt` of the bookings that embed it.
 		 */
 		get: operations['getResource'];
 		put?: never;
@@ -269,7 +266,7 @@ export interface paths {
 		};
 		/**
 		 * List resource bookings
-		 * @description Lists the bookings whose assigned employees are all visible to the API key; a booking with any employee outside the key's teams is omitted whole. `from` and `to` select every booking overlapping the window (`startDate < to` and `endDate > from`). `updatedSince` filters on `updatedAt >= updatedSince` inclusive and moves when an employee is added or removed. A cancelled booking is hard-deleted, so `updatedSince` cannot express a deletion and a long-lived sync needs a periodic full resync. `startDate` and `endDate` are UTC instants; convert them against the `timeZone` of the `/resources` row whose `id` matches the embedded `resource.id` to place the booking on a local day. `employees[].userId` re-joins against the `id` of a `/employees` row; `employees: []` means nobody is assigned yet. Renaming a Ressource or an employee shows in the stubs immediately but does not bump the `updatedAt` of the booking. A booking is returned only when every assigned employee is visible to the API key.
+		 * @description A cancelled booking is hard-deleted, so `updatedSince` cannot express a deletion and a long-lived sync needs a periodic full resync. Renaming a Ressource or an employee shows in the embedded stubs immediately but does not move the booking’s `updatedAt`. A booking is returned only when every assigned employee is visible to the API key.
 		 */
 		get: operations['listResourceBookings'];
 		put?: never;
@@ -289,7 +286,7 @@ export interface paths {
 		};
 		/**
 		 * Get a resource booking
-		 * @description `startDate` and `endDate` are UTC instants; convert them against the `timeZone` of the `/resources` row whose `id` matches the embedded `resource.id` to place the booking on a local day. `employees[].userId` re-joins against the `id` of a `/employees` row; `employees: []` means nobody is assigned yet. Renaming a Ressource or an employee shows in the stubs immediately but does not bump the `updatedAt` of the booking. A booking is returned only when every assigned employee is visible to the API key.
+		 * @description Renaming a Ressource or an employee shows in the embedded stubs immediately but does not move the booking’s `updatedAt`. A booking is returned only when every assigned employee is visible to the API key.
 		 */
 		get: operations['getResourceBooking'];
 		put?: never;
@@ -309,7 +306,7 @@ export interface paths {
 		};
 		/**
 		 * List absence requests
-		 * @description Lists the absence requests of the employees this API key may see. A request overlapping the window is included whole, so its `startDate` may precede `from`. `updatedSince` matches a request created since then, or one whose history records an event since then, which is how a status change surfaces. `from` and `to` are calendar dates in the organization’s time zone, not timestamps.
+		 * @description A request overlapping the window is returned whole. `updatedSince` also matches a request whose history records an event since then, which is how a status change surfaces. `from` and `to` are calendar dates in the organization’s time zone, not timestamps.
 		 */
 		get: operations['listAbsenceRequests'];
 		put?: never;
@@ -345,8 +342,8 @@ export interface paths {
 			cookie?: never;
 		};
 		/**
-		 * List who is away
-		 * @description Lists, per employee, the days in the window covered by an approved or booked absence, with the absence type applying on each. A day split between two types appears once per type. A type is named only for employees covered by `view_absence_requests_for_others`; otherwise `absenceTypeName` is the type’s public stand-in and `isRedacted` is `true`. `from` and `to` are calendar dates in the organization’s time zone, not timestamps.
+		 * List absent employees
+		 * @description Counts approved and booked absences. `from` and `to` are calendar dates in the organization’s time zone, not timestamps.
 		 */
 		get: operations['listAbsentUsers'];
 		put?: never;
@@ -365,8 +362,8 @@ export interface paths {
 			cookie?: never;
 		};
 		/**
-		 * List who is present right now
-		 * @description Reports each active employee this API key may see as `working` (a time entry is running), `absent` (an approved or booked absence covers today) or `away` (neither). `since` is the start of the running time entry, `null` for anyone not working. `absenceTypes` lists the absence types covering today, including for someone reported as `working`. A type is named only for employees covered by `view_absence_requests_for_others`; otherwise `name` is the type’s public stand-in and `isRedacted` is `true`.
+		 * List current attendance
+		 * @description Reports every active employee this API key may see.
 		 */
 		get: operations['listAttendance'];
 		put?: never;
@@ -386,7 +383,7 @@ export interface paths {
 		};
 		/**
 		 * List daily reports
-		 * @description One row per employee and day, holding the worked, target and balance minutes the time-tracking calculator derived. Reports are recalculated when anything feeding them changes, so `updatedAt` moves without a time entry being edited. A day with no report has never been calculated, which is not the same as a day with no work. `from` and `to` are calendar dates and the window is required.
+		 * @description One row per employee and day, as derived by the time-tracking calculator. A report is recalculated whenever anything feeding it changes. A day with no report has never been calculated, which is not the same as a day with no work. When a work-time corridor applies, the minute fields count only the time inside it.
 		 */
 		get: operations['listDailyReports'];
 		put?: never;
@@ -406,7 +403,7 @@ export interface paths {
 		};
 		/**
 		 * List form submissions
-		 * @description Lists filled-in forms, never the templates they were filled in from. `templateId` names the template a submission came from. Field values are not included here; fetch a single submission for those.
+		 * @description Lists filled-in forms, never templates. Field values are only returned by `GET /form-submissions/{id}`.
 		 */
 		get: operations['listFormSubmissions'];
 		put?: never;
@@ -424,10 +421,7 @@ export interface paths {
 			path?: never;
 			cookie?: never;
 		};
-		/**
-		 * Get a form submission
-		 * @description Returns the submission together with its top-level field values, in the order the form defines. A relation field reports the referenced id. Values nested in a repeating group, and binary values such as signatures, come back as `null`.
-		 */
+		/** Get a form submission */
 		get: operations['getFormSubmission'];
 		put?: never;
 		post?: never;
@@ -437,7 +431,7 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
-	'/employees/{userId}/wage': {
+	'/wage/pay-rates': {
 		parameters: {
 			query?: never;
 			header?: never;
@@ -445,10 +439,10 @@ export interface paths {
 			cookie?: never;
 		};
 		/**
-		 * Get an employee’s pay rate
-		 * @description Returns the pay rate from the employment contract in force on `date`, which defaults to today. Responds 404 when no contract covers that date.
+		 * List pay rates
+		 * @description Returns one pay rate per employee, taken from the employment contract in force on `date`. An employee is left out when no contract covers `date` or that contract has no pay settings.
 		 */
-		get: operations['getEmployeeWage'];
+		get: operations['listPayRates'];
 		put?: never;
 		post?: never;
 		delete?: never;
@@ -457,7 +451,7 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
-	'/special-payments': {
+	'/wage/special-payments': {
 		parameters: {
 			query?: never;
 			header?: never;
@@ -466,7 +460,7 @@ export interface paths {
 		};
 		/**
 		 * List special payments
-		 * @description One-off payments booked against an employee, such as a bonus. Amounts are whole cents. `date` is the calendar date the payment is booked on, which payroll uses, not the date the row was written.
+		 * @description One-off payments such as a bonus.
 		 */
 		get: operations['listSpecialPayments'];
 		put?: never;
@@ -477,7 +471,7 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
-	'/overtime-payouts': {
+	'/wage/overtime-payouts': {
 		parameters: {
 			query?: never;
 			header?: never;
@@ -486,7 +480,7 @@ export interface paths {
 		};
 		/**
 		 * List overtime payouts
-		 * @description Overtime paid out rather than carried forward. A payout with `excludedFromOvertimeBalance` was paid without reducing the employee's overtime balance. Amounts are whole cents. `date` is the calendar date the payment is booked on, which payroll uses, not the date the row was written.
+		 * @description Overtime paid out rather than carried forward.
 		 */
 		get: operations['listOvertimePayouts'];
 		put?: never;
@@ -505,8 +499,8 @@ export interface paths {
 			cookie?: never;
 		};
 		/**
-		 * List workspace bookings by employee
-		 * @description Lists desk and home-office bookings. A booking is visible only when every employee assigned to it is one this API key may see; an unstaffed booking always is. `userId` narrows to bookings including at least one of the given employees, but the returned `userIds` still lists everyone on the booking.
+		 * List workspace entries
+		 * @description Lists desk and home-office bookings. A booking is visible only when the API key may see every employee on it; an unstaffed booking always is.
 		 */
 		get: operations['listWorkspaceEntries'];
 		put?: never;
@@ -526,7 +520,7 @@ export interface paths {
 		};
 		/**
 		 * List employee options
-		 * @description Lists the employees this API key may see as `{ value, label }` pairs, `value` being the employee id every other endpoint takes as `userId`. Archived employees are left out. `search` matches `displayName` and `fullName` case-insensitively.
+		 * @description Lists the employees this API key may see; `value` is the `userId`. Archived employees are left out. `search` also matches `fullName`.
 		 */
 		get: operations['listEmployeeOptions'];
 		put?: never;
@@ -545,8 +539,8 @@ export interface paths {
 			cookie?: never;
 		};
 		/**
-		 * List teams options
-		 * @description Lists teams as `{ value, label }` pairs for a dropdown. Archived entries are left out. `search` matches the label case-insensitively.
+		 * List team options
+		 * @description Archived teams are left out.
 		 */
 		get: operations['listTeamOptions'];
 		put?: never;
@@ -565,8 +559,8 @@ export interface paths {
 			cookie?: never;
 		};
 		/**
-		 * List projects options
-		 * @description Lists projects as `{ value, label }` pairs for a dropdown. Archived entries are left out. `search` matches the label case-insensitively.
+		 * List project options
+		 * @description Archived projects are left out.
 		 */
 		get: operations['listProjectOptions'];
 		put?: never;
@@ -585,8 +579,8 @@ export interface paths {
 			cookie?: never;
 		};
 		/**
-		 * List project tags options
-		 * @description Lists project tags as `{ value, label }` pairs for a dropdown. Archived entries are left out. `search` matches the label case-insensitively.
+		 * List project tag options
+		 * @description Archived project tags are left out.
 		 */
 		get: operations['listProjectTagOptions'];
 		put?: never;
@@ -605,8 +599,8 @@ export interface paths {
 			cookie?: never;
 		};
 		/**
-		 * List cost centers options
-		 * @description Lists cost centers as `{ value, label }` pairs for a dropdown. Archived entries are left out. `search` matches the label case-insensitively.
+		 * List cost center options
+		 * @description Archived cost centers are left out.
 		 */
 		get: operations['listCostCenterOptions'];
 		put?: never;
@@ -625,8 +619,8 @@ export interface paths {
 			cookie?: never;
 		};
 		/**
-		 * List absence types options
-		 * @description Lists absence types as `{ value, label }` pairs for a dropdown. Archived entries are left out. `search` matches the label case-insensitively.
+		 * List absence type options
+		 * @description Archived absence types are left out.
 		 */
 		get: operations['listAbsenceTypeOptions'];
 		put?: never;
@@ -645,8 +639,8 @@ export interface paths {
 			cookie?: never;
 		};
 		/**
-		 * List workspaces options
-		 * @description Lists workspaces as `{ value, label }` pairs for a dropdown. Archived entries are left out. `search` matches the label case-insensitively. These are the same resources `GET /resources` returns in full.
+		 * List workspace options
+		 * @description Archived workspaces are left out. These are the same resources `GET /resources` returns in full.
 		 */
 		get: operations['listWorkspaceOptions'];
 		put?: never;
@@ -666,7 +660,7 @@ export interface paths {
 		};
 		/**
 		 * List task category options
-		 * @description Lists task categories as `{ value, label }` pairs for a dropdown, which is where the `categoryId` `POST /tasks` requires comes from. A task category is never archived. `search` matches the label case-insensitively.
+		 * @description Source of the `categoryId` a task requires. Task categories are never archived.
 		 */
 		get: operations['listTaskCategoryOptions'];
 		put?: never;
@@ -686,7 +680,7 @@ export interface paths {
 		};
 		/**
 		 * List work type options
-		 * @description Lists the work types the organization has configured, as `{ value, label }` pairs. `value` is the `type` of a time entry. Work types are a fixed vocabulary, so the label is the value and `search` matches that.
+		 * @description Lists the work types the organization has configured; `value` is the `type` of a time entry. Work types are a fixed vocabulary, so `label` equals `value`.
 		 */
 		get: operations['listWorkTypeOptions'];
 		put?: never;
@@ -706,7 +700,6 @@ export interface components {
 			/** @constant */
 			defined: false;
 			code: string;
-			status: number;
 			message: string;
 			data?: unknown;
 		};
@@ -743,19 +736,34 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description Version of this API contract. */
 						apiVersion: string;
+						/** @description The API key presented with the request. */
 						apiKey: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description API key id.
+							 */
 							id: string;
+							/** @description Name given to the key when it was created. */
 							name: string;
 						};
+						/** @description The organization the key belongs to. */
 						organization: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Organization id.
+							 */
 							id: string;
+							/** @description Organization name. */
 							name: string;
 						};
+						/** @description Permissions granted to the key. */
 						permissions: {
-							/** @enum {string} */
+							/**
+							 * @description Permission granted to the key.
+							 * @enum {string}
+							 */
 							key:
 								| 'view_time_entries_for_others'
 								| 'view_attendance_list'
@@ -770,8 +778,10 @@ export interface operations {
 								| 'manage_task'
 								| 'manage_projects'
 								| 'manage_cost_centers';
+							/** @description Teams the grant is limited to; `null` for the whole organization. */
 							targetTeamIds: string[] | null;
 						}[];
+						/** @description Modules the organization has enabled; endpoints of other modules are refused. */
 						enabledModules: (
 							| 'Base'
 							| 'User'
@@ -815,13 +825,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -841,13 +861,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -867,13 +897,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -893,13 +933,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -919,15 +969,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -952,13 +1014,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -978,13 +1050,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1019,10 +1101,16 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
+							/** @description Stable identifier of the field, used as the key in `attributes`. */
 							key: string;
+							/** @description Field name in the requested `language`, or `key` when there is no translation. */
 							label: string;
-							/** @enum {string} */
+							/**
+							 * @description Kind of value the field holds.
+							 * @enum {string}
+							 */
 							type:
 								| 'string'
 								| 'string_multiline'
@@ -1032,11 +1120,14 @@ export interface operations {
 								| 'date'
 								| 'children'
 								| 'switch';
+							/** @description Whether every employee must have a value. */
 							required: boolean;
+							/** @description Built-in group the field belongs to; `null` for a custom field. */
 							systemFieldType:
 								| ('master_data' | 'absence' | 'accounting_export' | 'personnel_file')
 								| null;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -1056,13 +1147,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1082,13 +1183,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1108,13 +1219,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1134,13 +1255,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1160,15 +1291,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -1193,13 +1336,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1219,13 +1372,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1260,73 +1423,133 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Employee the contract belongs to.
+							 */
 							userId: string;
-							/** Format: date */
+							/**
+							 * Format: date
+							 * @description First day the contract applies.
+							 */
 							activeFromIso: string;
+							/** @description Last day the contract applies; `null` for an open-ended contract. */
 							activeUntilIso: string | null;
 							/**
 							 * Anstellungsverhältnis
+							 * @description Kind of employment.
 							 * @enum {string}
 							 */
 							employmentType: 'full_time' | 'part_time' | 'mini_job' | 'working_student';
 							/**
 							 * Vertragsnotizen
-							 * @description Für den Mitarbeiter nicht sichtbar
+							 * @description Internal notes, not visible to the employee.
 							 */
 							notes: string | null;
+							/** @description Pay; `null` when the contract records none. */
 							paySettings: {
+								/** @description Pay rate in cents per `rateInterval`. */
 								rateCents: number;
-								/** @enum {string} */
+								/**
+								 * @description Whether the rate is per hour or per month.
+								 * @enum {string}
+								 */
 								rateInterval: 'hourly' | 'monthly';
-								/** Format: uuid */
+								/**
+								 * Format: uuid
+								 * @description Wage type the pay is booked under.
+								 */
 								wageTypeId: string;
 							} | null;
+							/** @description Vacation entitlement; `null` for none. */
 							absenceSettings: {
-								/** Jährlicher Urlaubsanspruch in Tagen */
+								/**
+								 * Jährlicher Urlaubsanspruch in Tagen
+								 * @description Vacation days granted per year.
+								 */
 								yearlyQuotaWorkDays: number;
+								/** @description Vacation days granted for the vacation year named by `initialQuotaYear`. */
 								initialQuotaWorkDays: number | null;
 								/**
 								 * Jahr des anfänglichen Urlaubsanspruchs
-								 * @description Urlaubsjahr, in dem der anfängliche Urlaubsanspruch angerechnet wird. Ohne Angabe das Jahr des Arbeitsvertragsbeginns
+								 * @description Vacation year the initial quota counts towards; the contract start year when `null`.
 								 */
 								initialQuotaYear: number | null;
+								/** @description Splits the yearly quota into parts granted every this many months. */
 								allocationIntervalMonths: number | null;
+								/** @description Months by which the quota grant is postponed. */
 								allocationDelayMonths: number | null;
+								/** @description Months into the next year after which untaken vacation expires. */
 								carryOverMonths: number | null;
 							} | null;
+							/** @description Target work time; `null` when the employee has none. */
 							workTimeSettings: {
-								/** Anfängliche Überstunden */
+								/**
+								 * Anfängliche Überstunden
+								 * @description Overtime balance carried in when the contract starts.
+								 */
 								initialOvertimeMinutes: number | null;
-								/** Anfängliche Gleitzeit */
+								/**
+								 * Anfängliche Gleitzeit
+								 * @description Flextime balance carried in when the contract starts.
+								 */
 								initialFlexOvertimeMinutes: number | null;
-								/** Max. Zeitguthaben */
+								/**
+								 * Max. Zeitguthaben
+								 * @description Largest overtime balance allowed; `null` for no limit.
+								 */
 								maxTimeCreditMinutes: number | null;
-								/** Max. Zeitschuld */
+								/**
+								 * Max. Zeitschuld
+								 * @description Lowest overtime balance allowed, as a negative number; `null` for no limit.
+								 */
 								maxTimeDebtMinutes: number | null;
+								/** @description Work-time models, each applying to a range of week or month numbers. A model holds either `fixed` or `flexible`. */
 								models: {
+									/** @description First week or month number the model covers. */
 									startConstraint: number;
+									/** @description Last week or month number the model covers. */
 									endConstraint: number;
-									/** @enum {string} */
+									/**
+									 * @description Whether the constraints count weeks or months.
+									 * @enum {string}
+									 */
 									constraintUnit: 'week_number' | 'month_number';
+									/** @description Fixed daily targets; `null` for a flexible model. */
 									fixed: {
+										/** @description Target minutes per weekday, Monday first. */
 										weekDayWorkMinutes: number[];
 									} | null;
+									/** @description Monthly targets; `null` for a fixed model. */
 									flexible: {
+										/** @description Days work is allowed on; `null` for every day. */
 										workDays: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[] | null;
+										/** @description Minimum minutes per month. */
 										minMonthlyWorkMinutes: number | null;
+										/** @description Maximum minutes per month. */
 										maxMonthlyWorkMinutes: number | null;
 									} | null;
 								}[];
 							} | null;
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Employment contract id.
+							 */
 							id: string;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description When the contract was created.
+							 */
 							createdAt: string;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description When the contract last changed.
+							 */
 							updatedAt: string;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -1346,13 +1569,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1372,13 +1605,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1398,13 +1641,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1424,13 +1677,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1450,15 +1713,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -1483,13 +1758,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1509,13 +1794,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1532,50 +1827,88 @@ export interface operations {
 		requestBody: {
 			content: {
 				'application/json': {
-					/** Format: uuid */
+					/**
+					 * Format: uuid
+					 * @description Employee the contract belongs to.
+					 */
 					userId: string;
-					/** Format: date */
+					/**
+					 * Format: date
+					 * @description First day the contract applies.
+					 */
 					activeFromIso: string;
+					/** @description Last day the contract applies; `null` for an open-ended contract. */
 					activeUntilIso: string | null;
 					/**
 					 * Anstellungsverhältnis
+					 * @description Kind of employment.
 					 * @enum {string}
 					 */
 					employmentType: 'full_time' | 'part_time' | 'mini_job' | 'working_student';
 					/**
 					 * Vertragsnotizen
-					 * @description Für den Mitarbeiter nicht sichtbar
+					 * @description Internal notes, not visible to the employee.
 					 */
 					notes: string | null;
+					/** @description Pay; `null` when the contract records none. */
 					paySettings: {
+						/** @description Pay rate in cents per `rateInterval`. */
 						rateCents: number;
-						/** @enum {string} */
+						/**
+						 * @description Whether the rate is per hour or per month.
+						 * @enum {string}
+						 */
 						rateInterval: 'hourly' | 'monthly';
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Wage type the pay is booked under.
+						 */
 						wageTypeId: string;
 					} | null;
+					/** @description Vacation entitlement; `null` for none. */
 					absenceSettings: {
-						/** Jährlicher Urlaubsanspruch in Tagen */
+						/**
+						 * Jährlicher Urlaubsanspruch in Tagen
+						 * @description Vacation days granted per year.
+						 */
 						yearlyQuotaWorkDays: number;
+						/** @description Vacation days granted for the vacation year named by `initialQuotaYear`. */
 						initialQuotaWorkDays: number | null;
 						/**
 						 * Jahr des anfänglichen Urlaubsanspruchs
-						 * @description Urlaubsjahr, in dem der anfängliche Urlaubsanspruch angerechnet wird. Ohne Angabe das Jahr des Arbeitsvertragsbeginns
+						 * @description Vacation year the initial quota counts towards; the contract start year when `null`.
 						 */
 						initialQuotaYear: number | null;
+						/** @description Splits the yearly quota into parts granted every this many months. */
 						allocationIntervalMonths: number | null;
+						/** @description Months by which the quota grant is postponed. */
 						allocationDelayMonths: number | null;
+						/** @description Months into the next year after which untaken vacation expires. */
 						carryOverMonths: number | null;
 					} | null;
+					/** @description Target work time; `null` when the employee has none. */
 					workTimeSettings: {
-						/** Anfängliche Überstunden */
+						/**
+						 * Anfängliche Überstunden
+						 * @description Overtime balance carried in when the contract starts.
+						 */
 						initialOvertimeMinutes: number | null;
-						/** Anfängliche Gleitzeit */
+						/**
+						 * Anfängliche Gleitzeit
+						 * @description Flextime balance carried in when the contract starts.
+						 */
 						initialFlexOvertimeMinutes: number | null;
-						/** Max. Zeitguthaben */
+						/**
+						 * Max. Zeitguthaben
+						 * @description Largest overtime balance allowed; `null` for no limit.
+						 */
 						maxTimeCreditMinutes: number | null;
-						/** Max. Zeitschuld */
+						/**
+						 * Max. Zeitschuld
+						 * @description Lowest overtime balance allowed, as a negative number; `null` for no limit.
+						 */
 						maxTimeDebtMinutes: number | null;
+						/** @description Work-time models, each applying to a range of week or month numbers. A model holds either `fixed` or `flexible`. */
 						models: (
 							| {
 									startConstraint: number;
@@ -1625,70 +1958,128 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Employee the contract belongs to.
+						 */
 						userId: string;
-						/** Format: date */
+						/**
+						 * Format: date
+						 * @description First day the contract applies.
+						 */
 						activeFromIso: string;
+						/** @description Last day the contract applies; `null` for an open-ended contract. */
 						activeUntilIso: string | null;
 						/**
 						 * Anstellungsverhältnis
+						 * @description Kind of employment.
 						 * @enum {string}
 						 */
 						employmentType: 'full_time' | 'part_time' | 'mini_job' | 'working_student';
 						/**
 						 * Vertragsnotizen
-						 * @description Für den Mitarbeiter nicht sichtbar
+						 * @description Internal notes, not visible to the employee.
 						 */
 						notes: string | null;
+						/** @description Pay; `null` when the contract records none. */
 						paySettings: {
+							/** @description Pay rate in cents per `rateInterval`. */
 							rateCents: number;
-							/** @enum {string} */
+							/**
+							 * @description Whether the rate is per hour or per month.
+							 * @enum {string}
+							 */
 							rateInterval: 'hourly' | 'monthly';
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Wage type the pay is booked under.
+							 */
 							wageTypeId: string;
 						} | null;
+						/** @description Vacation entitlement; `null` for none. */
 						absenceSettings: {
-							/** Jährlicher Urlaubsanspruch in Tagen */
+							/**
+							 * Jährlicher Urlaubsanspruch in Tagen
+							 * @description Vacation days granted per year.
+							 */
 							yearlyQuotaWorkDays: number;
+							/** @description Vacation days granted for the vacation year named by `initialQuotaYear`. */
 							initialQuotaWorkDays: number | null;
 							/**
 							 * Jahr des anfänglichen Urlaubsanspruchs
-							 * @description Urlaubsjahr, in dem der anfängliche Urlaubsanspruch angerechnet wird. Ohne Angabe das Jahr des Arbeitsvertragsbeginns
+							 * @description Vacation year the initial quota counts towards; the contract start year when `null`.
 							 */
 							initialQuotaYear: number | null;
+							/** @description Splits the yearly quota into parts granted every this many months. */
 							allocationIntervalMonths: number | null;
+							/** @description Months by which the quota grant is postponed. */
 							allocationDelayMonths: number | null;
+							/** @description Months into the next year after which untaken vacation expires. */
 							carryOverMonths: number | null;
 						} | null;
+						/** @description Target work time; `null` when the employee has none. */
 						workTimeSettings: {
-							/** Anfängliche Überstunden */
+							/**
+							 * Anfängliche Überstunden
+							 * @description Overtime balance carried in when the contract starts.
+							 */
 							initialOvertimeMinutes: number | null;
-							/** Anfängliche Gleitzeit */
+							/**
+							 * Anfängliche Gleitzeit
+							 * @description Flextime balance carried in when the contract starts.
+							 */
 							initialFlexOvertimeMinutes: number | null;
-							/** Max. Zeitguthaben */
+							/**
+							 * Max. Zeitguthaben
+							 * @description Largest overtime balance allowed; `null` for no limit.
+							 */
 							maxTimeCreditMinutes: number | null;
-							/** Max. Zeitschuld */
+							/**
+							 * Max. Zeitschuld
+							 * @description Lowest overtime balance allowed, as a negative number; `null` for no limit.
+							 */
 							maxTimeDebtMinutes: number | null;
+							/** @description Work-time models, each applying to a range of week or month numbers. A model holds either `fixed` or `flexible`. */
 							models: {
+								/** @description First week or month number the model covers. */
 								startConstraint: number;
+								/** @description Last week or month number the model covers. */
 								endConstraint: number;
-								/** @enum {string} */
+								/**
+								 * @description Whether the constraints count weeks or months.
+								 * @enum {string}
+								 */
 								constraintUnit: 'week_number' | 'month_number';
+								/** @description Fixed daily targets; `null` for a flexible model. */
 								fixed: {
+									/** @description Target minutes per weekday, Monday first. */
 									weekDayWorkMinutes: number[];
 								} | null;
+								/** @description Monthly targets; `null` for a fixed model. */
 								flexible: {
+									/** @description Days work is allowed on; `null` for every day. */
 									workDays: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[] | null;
+									/** @description Minimum minutes per month. */
 									minMonthlyWorkMinutes: number | null;
+									/** @description Maximum minutes per month. */
 									maxMonthlyWorkMinutes: number | null;
 								} | null;
 							}[];
 						} | null;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Employment contract id.
+						 */
 						id: string;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the contract was created.
+						 */
 						createdAt: string;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the contract last changed.
+						 */
 						updatedAt: string;
 					};
 				};
@@ -1708,13 +2099,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1734,13 +2135,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1760,13 +2171,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1786,13 +2207,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1812,15 +2243,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -1845,13 +2288,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1871,13 +2324,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -1910,70 +2373,128 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Employee the contract belongs to.
+						 */
 						userId: string;
-						/** Format: date */
+						/**
+						 * Format: date
+						 * @description First day the contract applies.
+						 */
 						activeFromIso: string;
+						/** @description Last day the contract applies; `null` for an open-ended contract. */
 						activeUntilIso: string | null;
 						/**
 						 * Anstellungsverhältnis
+						 * @description Kind of employment.
 						 * @enum {string}
 						 */
 						employmentType: 'full_time' | 'part_time' | 'mini_job' | 'working_student';
 						/**
 						 * Vertragsnotizen
-						 * @description Für den Mitarbeiter nicht sichtbar
+						 * @description Internal notes, not visible to the employee.
 						 */
 						notes: string | null;
+						/** @description Pay; `null` when the contract records none. */
 						paySettings: {
+							/** @description Pay rate in cents per `rateInterval`. */
 							rateCents: number;
-							/** @enum {string} */
+							/**
+							 * @description Whether the rate is per hour or per month.
+							 * @enum {string}
+							 */
 							rateInterval: 'hourly' | 'monthly';
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Wage type the pay is booked under.
+							 */
 							wageTypeId: string;
 						} | null;
+						/** @description Vacation entitlement; `null` for none. */
 						absenceSettings: {
-							/** Jährlicher Urlaubsanspruch in Tagen */
+							/**
+							 * Jährlicher Urlaubsanspruch in Tagen
+							 * @description Vacation days granted per year.
+							 */
 							yearlyQuotaWorkDays: number;
+							/** @description Vacation days granted for the vacation year named by `initialQuotaYear`. */
 							initialQuotaWorkDays: number | null;
 							/**
 							 * Jahr des anfänglichen Urlaubsanspruchs
-							 * @description Urlaubsjahr, in dem der anfängliche Urlaubsanspruch angerechnet wird. Ohne Angabe das Jahr des Arbeitsvertragsbeginns
+							 * @description Vacation year the initial quota counts towards; the contract start year when `null`.
 							 */
 							initialQuotaYear: number | null;
+							/** @description Splits the yearly quota into parts granted every this many months. */
 							allocationIntervalMonths: number | null;
+							/** @description Months by which the quota grant is postponed. */
 							allocationDelayMonths: number | null;
+							/** @description Months into the next year after which untaken vacation expires. */
 							carryOverMonths: number | null;
 						} | null;
+						/** @description Target work time; `null` when the employee has none. */
 						workTimeSettings: {
-							/** Anfängliche Überstunden */
+							/**
+							 * Anfängliche Überstunden
+							 * @description Overtime balance carried in when the contract starts.
+							 */
 							initialOvertimeMinutes: number | null;
-							/** Anfängliche Gleitzeit */
+							/**
+							 * Anfängliche Gleitzeit
+							 * @description Flextime balance carried in when the contract starts.
+							 */
 							initialFlexOvertimeMinutes: number | null;
-							/** Max. Zeitguthaben */
+							/**
+							 * Max. Zeitguthaben
+							 * @description Largest overtime balance allowed; `null` for no limit.
+							 */
 							maxTimeCreditMinutes: number | null;
-							/** Max. Zeitschuld */
+							/**
+							 * Max. Zeitschuld
+							 * @description Lowest overtime balance allowed, as a negative number; `null` for no limit.
+							 */
 							maxTimeDebtMinutes: number | null;
+							/** @description Work-time models, each applying to a range of week or month numbers. A model holds either `fixed` or `flexible`. */
 							models: {
+								/** @description First week or month number the model covers. */
 								startConstraint: number;
+								/** @description Last week or month number the model covers. */
 								endConstraint: number;
-								/** @enum {string} */
+								/**
+								 * @description Whether the constraints count weeks or months.
+								 * @enum {string}
+								 */
 								constraintUnit: 'week_number' | 'month_number';
+								/** @description Fixed daily targets; `null` for a flexible model. */
 								fixed: {
+									/** @description Target minutes per weekday, Monday first. */
 									weekDayWorkMinutes: number[];
 								} | null;
+								/** @description Monthly targets; `null` for a fixed model. */
 								flexible: {
+									/** @description Days work is allowed on; `null` for every day. */
 									workDays: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[] | null;
+									/** @description Minimum minutes per month. */
 									minMonthlyWorkMinutes: number | null;
+									/** @description Maximum minutes per month. */
 									maxMonthlyWorkMinutes: number | null;
 								} | null;
 							}[];
 						} | null;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Employment contract id.
+						 */
 						id: string;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the contract was created.
+						 */
 						createdAt: string;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the contract last changed.
+						 */
 						updatedAt: string;
 					};
 				};
@@ -1993,13 +2514,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2019,13 +2550,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2045,13 +2586,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2071,13 +2622,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2097,15 +2658,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -2130,13 +2703,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2156,13 +2739,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2181,48 +2774,83 @@ export interface operations {
 		requestBody: {
 			content: {
 				'application/json': {
-					/** Format: date */
+					/**
+					 * Format: date
+					 * @description First day the contract applies.
+					 */
 					activeFromIso: string;
+					/** @description Last day the contract applies; `null` for an open-ended contract. */
 					activeUntilIso: string | null;
 					/**
 					 * Anstellungsverhältnis
+					 * @description Kind of employment.
 					 * @enum {string}
 					 */
 					employmentType: 'full_time' | 'part_time' | 'mini_job' | 'working_student';
 					/**
 					 * Vertragsnotizen
-					 * @description Für den Mitarbeiter nicht sichtbar
+					 * @description Internal notes, not visible to the employee.
 					 */
 					notes: string | null;
+					/** @description Pay; `null` when the contract records none. */
 					paySettings: {
+						/** @description Pay rate in cents per `rateInterval`. */
 						rateCents: number;
-						/** @enum {string} */
+						/**
+						 * @description Whether the rate is per hour or per month.
+						 * @enum {string}
+						 */
 						rateInterval: 'hourly' | 'monthly';
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Wage type the pay is booked under.
+						 */
 						wageTypeId: string;
 					} | null;
+					/** @description Vacation entitlement; `null` for none. */
 					absenceSettings: {
-						/** Jährlicher Urlaubsanspruch in Tagen */
+						/**
+						 * Jährlicher Urlaubsanspruch in Tagen
+						 * @description Vacation days granted per year.
+						 */
 						yearlyQuotaWorkDays: number;
+						/** @description Vacation days granted for the vacation year named by `initialQuotaYear`. */
 						initialQuotaWorkDays: number | null;
 						/**
 						 * Jahr des anfänglichen Urlaubsanspruchs
-						 * @description Urlaubsjahr, in dem der anfängliche Urlaubsanspruch angerechnet wird. Ohne Angabe das Jahr des Arbeitsvertragsbeginns
+						 * @description Vacation year the initial quota counts towards; the contract start year when `null`.
 						 */
 						initialQuotaYear: number | null;
+						/** @description Splits the yearly quota into parts granted every this many months. */
 						allocationIntervalMonths: number | null;
+						/** @description Months by which the quota grant is postponed. */
 						allocationDelayMonths: number | null;
+						/** @description Months into the next year after which untaken vacation expires. */
 						carryOverMonths: number | null;
 					} | null;
+					/** @description Target work time; `null` when the employee has none. */
 					workTimeSettings: {
-						/** Anfängliche Überstunden */
+						/**
+						 * Anfängliche Überstunden
+						 * @description Overtime balance carried in when the contract starts.
+						 */
 						initialOvertimeMinutes: number | null;
-						/** Anfängliche Gleitzeit */
+						/**
+						 * Anfängliche Gleitzeit
+						 * @description Flextime balance carried in when the contract starts.
+						 */
 						initialFlexOvertimeMinutes: number | null;
-						/** Max. Zeitguthaben */
+						/**
+						 * Max. Zeitguthaben
+						 * @description Largest overtime balance allowed; `null` for no limit.
+						 */
 						maxTimeCreditMinutes: number | null;
-						/** Max. Zeitschuld */
+						/**
+						 * Max. Zeitschuld
+						 * @description Lowest overtime balance allowed, as a negative number; `null` for no limit.
+						 */
 						maxTimeDebtMinutes: number | null;
+						/** @description Work-time models, each applying to a range of week or month numbers. A model holds either `fixed` or `flexible`. */
 						models: (
 							| {
 									startConstraint: number;
@@ -2270,70 +2898,128 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Employee the contract belongs to.
+						 */
 						userId: string;
-						/** Format: date */
+						/**
+						 * Format: date
+						 * @description First day the contract applies.
+						 */
 						activeFromIso: string;
+						/** @description Last day the contract applies; `null` for an open-ended contract. */
 						activeUntilIso: string | null;
 						/**
 						 * Anstellungsverhältnis
+						 * @description Kind of employment.
 						 * @enum {string}
 						 */
 						employmentType: 'full_time' | 'part_time' | 'mini_job' | 'working_student';
 						/**
 						 * Vertragsnotizen
-						 * @description Für den Mitarbeiter nicht sichtbar
+						 * @description Internal notes, not visible to the employee.
 						 */
 						notes: string | null;
+						/** @description Pay; `null` when the contract records none. */
 						paySettings: {
+							/** @description Pay rate in cents per `rateInterval`. */
 							rateCents: number;
-							/** @enum {string} */
+							/**
+							 * @description Whether the rate is per hour or per month.
+							 * @enum {string}
+							 */
 							rateInterval: 'hourly' | 'monthly';
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Wage type the pay is booked under.
+							 */
 							wageTypeId: string;
 						} | null;
+						/** @description Vacation entitlement; `null` for none. */
 						absenceSettings: {
-							/** Jährlicher Urlaubsanspruch in Tagen */
+							/**
+							 * Jährlicher Urlaubsanspruch in Tagen
+							 * @description Vacation days granted per year.
+							 */
 							yearlyQuotaWorkDays: number;
+							/** @description Vacation days granted for the vacation year named by `initialQuotaYear`. */
 							initialQuotaWorkDays: number | null;
 							/**
 							 * Jahr des anfänglichen Urlaubsanspruchs
-							 * @description Urlaubsjahr, in dem der anfängliche Urlaubsanspruch angerechnet wird. Ohne Angabe das Jahr des Arbeitsvertragsbeginns
+							 * @description Vacation year the initial quota counts towards; the contract start year when `null`.
 							 */
 							initialQuotaYear: number | null;
+							/** @description Splits the yearly quota into parts granted every this many months. */
 							allocationIntervalMonths: number | null;
+							/** @description Months by which the quota grant is postponed. */
 							allocationDelayMonths: number | null;
+							/** @description Months into the next year after which untaken vacation expires. */
 							carryOverMonths: number | null;
 						} | null;
+						/** @description Target work time; `null` when the employee has none. */
 						workTimeSettings: {
-							/** Anfängliche Überstunden */
+							/**
+							 * Anfängliche Überstunden
+							 * @description Overtime balance carried in when the contract starts.
+							 */
 							initialOvertimeMinutes: number | null;
-							/** Anfängliche Gleitzeit */
+							/**
+							 * Anfängliche Gleitzeit
+							 * @description Flextime balance carried in when the contract starts.
+							 */
 							initialFlexOvertimeMinutes: number | null;
-							/** Max. Zeitguthaben */
+							/**
+							 * Max. Zeitguthaben
+							 * @description Largest overtime balance allowed; `null` for no limit.
+							 */
 							maxTimeCreditMinutes: number | null;
-							/** Max. Zeitschuld */
+							/**
+							 * Max. Zeitschuld
+							 * @description Lowest overtime balance allowed, as a negative number; `null` for no limit.
+							 */
 							maxTimeDebtMinutes: number | null;
+							/** @description Work-time models, each applying to a range of week or month numbers. A model holds either `fixed` or `flexible`. */
 							models: {
+								/** @description First week or month number the model covers. */
 								startConstraint: number;
+								/** @description Last week or month number the model covers. */
 								endConstraint: number;
-								/** @enum {string} */
+								/**
+								 * @description Whether the constraints count weeks or months.
+								 * @enum {string}
+								 */
 								constraintUnit: 'week_number' | 'month_number';
+								/** @description Fixed daily targets; `null` for a flexible model. */
 								fixed: {
+									/** @description Target minutes per weekday, Monday first. */
 									weekDayWorkMinutes: number[];
 								} | null;
+								/** @description Monthly targets; `null` for a fixed model. */
 								flexible: {
+									/** @description Days work is allowed on; `null` for every day. */
 									workDays: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[] | null;
+									/** @description Minimum minutes per month. */
 									minMonthlyWorkMinutes: number | null;
+									/** @description Maximum minutes per month. */
 									maxMonthlyWorkMinutes: number | null;
 								} | null;
 							}[];
 						} | null;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Employment contract id.
+						 */
 						id: string;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the contract was created.
+						 */
 						createdAt: string;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the contract last changed.
+						 */
 						updatedAt: string;
 					};
 				};
@@ -2353,13 +3039,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2379,13 +3075,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2405,13 +3111,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2431,13 +3147,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2457,15 +3183,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -2490,13 +3228,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2516,13 +3264,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2574,13 +3332,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2600,13 +3368,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2626,13 +3404,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2652,13 +3440,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2678,15 +3476,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -2711,13 +3521,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2737,13 +3557,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2783,27 +3613,55 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Task id.
+							 */
 							id: string;
+							/** @description Sequential number shown in the app. */
 							taskNumber: number;
+							/** @description Short summary of the task. */
 							title: string;
+							/** @description Longer free-text details. */
 							description: string | null;
-							/** @enum {string} */
+							/**
+							 * @description Progress of the task.
+							 * @enum {string}
+							 */
 							status: 'open' | 'in_progress' | 'blocked' | 'review' | 'completed';
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Task category, from `GET /options/task-categories`.
+							 */
 							categoryId: string;
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Employee responsible for the task; must not be archived.
+							 */
 							assignedUserId: string;
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Employee who created the task.
+							 */
 							authorUserId: string;
+							/** @description When the task is planned for. */
 							plannedAt: string | null;
+							/** @description When the task was archived. */
 							archivedAt: string | null;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description When the task was created.
+							 */
 							createdAt: string;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description When the task last changed.
+							 */
 							updatedAt: string;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -2823,13 +3681,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2849,13 +3717,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2875,13 +3753,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2901,13 +3789,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2927,15 +3825,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -2960,13 +3870,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -2986,13 +3906,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3009,12 +3939,21 @@ export interface operations {
 		requestBody: {
 			content: {
 				'application/json': {
+					/** @description Short summary of the task. */
 					title: string;
+					/** @description Longer free-text details. */
 					description: string | null;
-					/** Format: uuid */
+					/**
+					 * Format: uuid
+					 * @description Task category, from `GET /options/task-categories`.
+					 */
 					categoryId: string;
-					/** Format: uuid */
+					/**
+					 * Format: uuid
+					 * @description Employee responsible for the task; must not be archived.
+					 */
 					assignedUserId: string;
+					/** @description When the task is planned for. */
 					plannedAt: string | null;
 				};
 			};
@@ -3037,24 +3976,50 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Task id.
+						 */
 						id: string;
+						/** @description Sequential number shown in the app. */
 						taskNumber: number;
+						/** @description Short summary of the task. */
 						title: string;
+						/** @description Longer free-text details. */
 						description: string | null;
-						/** @enum {string} */
+						/**
+						 * @description Progress of the task.
+						 * @enum {string}
+						 */
 						status: 'open' | 'in_progress' | 'blocked' | 'review' | 'completed';
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Task category, from `GET /options/task-categories`.
+						 */
 						categoryId: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Employee responsible for the task; must not be archived.
+						 */
 						assignedUserId: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Employee who created the task.
+						 */
 						authorUserId: string;
+						/** @description When the task is planned for. */
 						plannedAt: string | null;
+						/** @description When the task was archived. */
 						archivedAt: string | null;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the task was created.
+						 */
 						createdAt: string;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the task last changed.
+						 */
 						updatedAt: string;
 					};
 				};
@@ -3074,13 +4039,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3100,13 +4075,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3126,13 +4111,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3152,13 +4147,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3178,15 +4183,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -3211,13 +4228,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3237,13 +4264,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3276,24 +4313,50 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Task id.
+						 */
 						id: string;
+						/** @description Sequential number shown in the app. */
 						taskNumber: number;
+						/** @description Short summary of the task. */
 						title: string;
+						/** @description Longer free-text details. */
 						description: string | null;
-						/** @enum {string} */
+						/**
+						 * @description Progress of the task.
+						 * @enum {string}
+						 */
 						status: 'open' | 'in_progress' | 'blocked' | 'review' | 'completed';
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Task category, from `GET /options/task-categories`.
+						 */
 						categoryId: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Employee responsible for the task; must not be archived.
+						 */
 						assignedUserId: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Employee who created the task.
+						 */
 						authorUserId: string;
+						/** @description When the task is planned for. */
 						plannedAt: string | null;
+						/** @description When the task was archived. */
 						archivedAt: string | null;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the task was created.
+						 */
 						createdAt: string;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the task last changed.
+						 */
 						updatedAt: string;
 					};
 				};
@@ -3313,13 +4376,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3339,13 +4412,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3365,13 +4448,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3391,13 +4484,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3417,15 +4520,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -3450,13 +4565,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3476,13 +4601,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3501,14 +4636,26 @@ export interface operations {
 		requestBody?: {
 			content: {
 				'application/json': {
+					/** @description Short summary of the task. */
 					title?: string;
+					/** @description Longer free-text details. */
 					description?: string | null;
-					/** Format: uuid */
+					/**
+					 * Format: uuid
+					 * @description Task category, from `GET /options/task-categories`.
+					 */
 					categoryId?: string;
-					/** Format: uuid */
+					/**
+					 * Format: uuid
+					 * @description Employee responsible for the task; must not be archived.
+					 */
 					assignedUserId?: string;
+					/** @description When the task is planned for. */
 					plannedAt?: string | null;
-					/** @enum {string} */
+					/**
+					 * @description Progress of the task.
+					 * @enum {string}
+					 */
 					status?: 'open' | 'in_progress' | 'blocked' | 'review' | 'completed';
 				};
 			};
@@ -3529,24 +4676,50 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Task id.
+						 */
 						id: string;
+						/** @description Sequential number shown in the app. */
 						taskNumber: number;
+						/** @description Short summary of the task. */
 						title: string;
+						/** @description Longer free-text details. */
 						description: string | null;
-						/** @enum {string} */
+						/**
+						 * @description Progress of the task.
+						 * @enum {string}
+						 */
 						status: 'open' | 'in_progress' | 'blocked' | 'review' | 'completed';
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Task category, from `GET /options/task-categories`.
+						 */
 						categoryId: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Employee responsible for the task; must not be archived.
+						 */
 						assignedUserId: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Employee who created the task.
+						 */
 						authorUserId: string;
+						/** @description When the task is planned for. */
 						plannedAt: string | null;
+						/** @description When the task was archived. */
 						archivedAt: string | null;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the task was created.
+						 */
 						createdAt: string;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the task last changed.
+						 */
 						updatedAt: string;
 					};
 				};
@@ -3566,13 +4739,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3592,13 +4775,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3618,13 +4811,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3644,13 +4847,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3670,15 +4883,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -3703,13 +4928,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3729,13 +4964,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3784,12 +5029,22 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Time entry id.
+							 */
 							id: string;
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Employee the time was worked by.
+							 */
 							userId: string;
-							/** @enum {string} */
+							/**
+							 * @description Work type, from `GET /options/work-types`.
+							 * @enum {string}
+							 */
 							type:
 								| 'worktime'
 								| 'breaktime'
@@ -3798,14 +5053,25 @@ export interface operations {
 								| 'community_service'
 								| 'travel_time'
 								| 'home_office';
-							/** Format: date-time */
-							startDate: string;
-							endDate: string | null;
+							/** @description Cost center the time is booked on. */
 							costCenterId: string | null;
+							/** @description Project the time is booked on. */
 							projectId: string | null;
+							/** @description Project tag; must be selectable for `projectId`. */
 							tagId: string | null;
+							/** @description Free-text note on the work done. */
 							description: string | null;
-							/** @enum {string} */
+							/**
+							 * Format: date-time
+							 * @description Start of the worked span.
+							 */
+							startDate: string;
+							/** @description End of the worked span. Running entries, which have none yet, are not returned. */
+							endDate: string | null;
+							/**
+							 * @description Channel the entry was created through.
+							 * @enum {string}
+							 */
 							source:
 								| 'system'
 								| 'web'
@@ -3817,12 +5083,20 @@ export interface operations {
 								| 'automatic_break_correction'
 								| 'automatic_shift_assignment_sync'
 								| 'automatic_blocking';
+							/** @description When the entry was deleted. */
 							archivedAt: string | null;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description When the entry was created.
+							 */
 							createdAt: string;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description When the entry last changed.
+							 */
 							updatedAt: string;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -3842,13 +5116,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3868,13 +5152,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3894,13 +5188,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3920,13 +5224,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -3946,15 +5260,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -3979,13 +5305,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4005,13 +5341,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4028,9 +5374,15 @@ export interface operations {
 		requestBody: {
 			content: {
 				'application/json': {
-					/** Format: uuid */
+					/**
+					 * Format: uuid
+					 * @description Employee the time was worked by.
+					 */
 					userId: string;
-					/** @enum {string} */
+					/**
+					 * @description Work type, from `GET /options/work-types`.
+					 * @enum {string}
+					 */
 					type:
 						| 'worktime'
 						| 'breaktime'
@@ -4039,14 +5391,24 @@ export interface operations {
 						| 'community_service'
 						| 'travel_time'
 						| 'home_office';
-					/** Format: date-time */
-					startDate: string;
-					/** Format: date-time */
-					endDate: string;
+					/** @description Cost center the time is booked on. */
 					costCenterId: string | null;
+					/** @description Project the time is booked on. */
 					projectId: string | null;
+					/** @description Project tag; must be selectable for `projectId`. */
 					tagId: string | null;
+					/** @description Free-text note on the work done. */
 					description: string | null;
+					/**
+					 * Format: date-time
+					 * @description Start of the worked span.
+					 */
+					startDate: string;
+					/**
+					 * Format: date-time
+					 * @description End of the worked span, at least one minute after `startDate`.
+					 */
+					endDate: string;
 				};
 			};
 		};
@@ -4068,11 +5430,20 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Time entry id.
+						 */
 						id: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Employee the time was worked by.
+						 */
 						userId: string;
-						/** @enum {string} */
+						/**
+						 * @description Work type, from `GET /options/work-types`.
+						 * @enum {string}
+						 */
 						type:
 							| 'worktime'
 							| 'breaktime'
@@ -4081,14 +5452,25 @@ export interface operations {
 							| 'community_service'
 							| 'travel_time'
 							| 'home_office';
-						/** Format: date-time */
-						startDate: string;
-						endDate: string | null;
+						/** @description Cost center the time is booked on. */
 						costCenterId: string | null;
+						/** @description Project the time is booked on. */
 						projectId: string | null;
+						/** @description Project tag; must be selectable for `projectId`. */
 						tagId: string | null;
+						/** @description Free-text note on the work done. */
 						description: string | null;
-						/** @enum {string} */
+						/**
+						 * Format: date-time
+						 * @description Start of the worked span.
+						 */
+						startDate: string;
+						/** @description End of the worked span. Running entries, which have none yet, are not returned. */
+						endDate: string | null;
+						/**
+						 * @description Channel the entry was created through.
+						 * @enum {string}
+						 */
 						source:
 							| 'system'
 							| 'web'
@@ -4100,10 +5482,17 @@ export interface operations {
 							| 'automatic_break_correction'
 							| 'automatic_shift_assignment_sync'
 							| 'automatic_blocking';
+						/** @description When the entry was deleted. */
 						archivedAt: string | null;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the entry was created.
+						 */
 						createdAt: string;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the entry last changed.
+						 */
 						updatedAt: string;
 					};
 				};
@@ -4123,13 +5512,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4149,13 +5548,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4175,13 +5584,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4201,13 +5620,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4227,15 +5656,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -4260,13 +5701,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4286,13 +5737,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4325,11 +5786,20 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Time entry id.
+						 */
 						id: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Employee the time was worked by.
+						 */
 						userId: string;
-						/** @enum {string} */
+						/**
+						 * @description Work type, from `GET /options/work-types`.
+						 * @enum {string}
+						 */
 						type:
 							| 'worktime'
 							| 'breaktime'
@@ -4338,14 +5808,25 @@ export interface operations {
 							| 'community_service'
 							| 'travel_time'
 							| 'home_office';
-						/** Format: date-time */
-						startDate: string;
-						endDate: string | null;
+						/** @description Cost center the time is booked on. */
 						costCenterId: string | null;
+						/** @description Project the time is booked on. */
 						projectId: string | null;
+						/** @description Project tag; must be selectable for `projectId`. */
 						tagId: string | null;
+						/** @description Free-text note on the work done. */
 						description: string | null;
-						/** @enum {string} */
+						/**
+						 * Format: date-time
+						 * @description Start of the worked span.
+						 */
+						startDate: string;
+						/** @description End of the worked span. Running entries, which have none yet, are not returned. */
+						endDate: string | null;
+						/**
+						 * @description Channel the entry was created through.
+						 * @enum {string}
+						 */
 						source:
 							| 'system'
 							| 'web'
@@ -4357,10 +5838,17 @@ export interface operations {
 							| 'automatic_break_correction'
 							| 'automatic_shift_assignment_sync'
 							| 'automatic_blocking';
+						/** @description When the entry was deleted. */
 						archivedAt: string | null;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the entry was created.
+						 */
 						createdAt: string;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the entry last changed.
+						 */
 						updatedAt: string;
 					};
 				};
@@ -4380,13 +5868,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4406,13 +5904,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4432,13 +5940,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4458,13 +5976,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4484,15 +6012,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -4517,13 +6057,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4543,13 +6093,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4601,13 +6161,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4627,13 +6197,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4653,13 +6233,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4679,13 +6269,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4705,15 +6305,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -4738,13 +6350,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4764,13 +6386,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4813,21 +6445,38 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Employee id, passed as `userId` to every other endpoint.
+							 */
 							id: string;
+							/** @description Name shown in the app. */
 							displayName: string;
+							/** @description First and last name. */
 							fullName: string;
-							/** @enum {string} */
+							/**
+							 * @description `archived` for an employee who has left the organization.
+							 * @enum {string}
+							 */
 							status: 'active' | 'archived';
+							/** @description Approved values of the public employee fields, keyed by the `key` from `GET /employee-fields`. */
 							attributes: {
 								[key: string]: string;
 							};
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description When the employee was added to the organization.
+							 */
 							createdAt: string;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description When the employee record last changed.
+							 */
 							updatedAt: string;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -4847,13 +6496,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4873,13 +6532,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4899,13 +6568,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4925,13 +6604,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -4951,15 +6640,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -4984,13 +6685,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5010,13 +6721,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5049,18 +6770,33 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Employee id, passed as `userId` to every other endpoint.
+						 */
 						id: string;
+						/** @description Name shown in the app. */
 						displayName: string;
+						/** @description First and last name. */
 						fullName: string;
-						/** @enum {string} */
+						/**
+						 * @description `archived` for an employee who has left the organization.
+						 * @enum {string}
+						 */
 						status: 'active' | 'archived';
+						/** @description Approved values of the public employee fields, keyed by the `key` from `GET /employee-fields`. */
 						attributes: {
 							[key: string]: string;
 						};
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the employee was added to the organization.
+						 */
 						createdAt: string;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the employee record last changed.
+						 */
 						updatedAt: string;
 					};
 				};
@@ -5080,13 +6816,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5106,13 +6852,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5132,13 +6888,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5158,13 +6924,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5184,15 +6960,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -5217,13 +7005,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5243,13 +7041,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5285,24 +7093,45 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Ressource id.
+							 */
 							id: string;
+							/** @description Name of the Ressource, such as a desk or room. */
 							name: string;
+							/** @description Free-text description. */
 							description: string | null;
+							/** @description How many employees can book it at once; `null` for no limit. */
 							maxEmployees: number | null;
+							/** @description IANA time zone its booking days are laid out in. */
 							timeZone: string;
+							/** @description Standort the Ressource belongs to, as a snapshot at request time. */
 							location: {
-								/** Format: uuid */
+								/**
+								 * Format: uuid
+								 * @description Standort id.
+								 */
 								id: string;
+								/** @description Standort name. */
 								name: string;
 							};
+							/** @description When the Ressource was archived. */
 							archivedAt: string | null;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description When the Ressource was created.
+							 */
 							createdAt: string;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description When the Ressource itself last changed.
+							 */
 							updatedAt: string;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -5322,13 +7151,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5348,13 +7187,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5374,13 +7223,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5400,13 +7259,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5426,15 +7295,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -5459,13 +7340,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5485,13 +7376,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5524,21 +7425,40 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Ressource id.
+						 */
 						id: string;
+						/** @description Name of the Ressource, such as a desk or room. */
 						name: string;
+						/** @description Free-text description. */
 						description: string | null;
+						/** @description How many employees can book it at once; `null` for no limit. */
 						maxEmployees: number | null;
+						/** @description IANA time zone its booking days are laid out in. */
 						timeZone: string;
+						/** @description Standort the Ressource belongs to, as a snapshot at request time. */
 						location: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Standort id.
+							 */
 							id: string;
+							/** @description Standort name. */
 							name: string;
 						};
+						/** @description When the Ressource was archived. */
 						archivedAt: string | null;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the Ressource was created.
+						 */
 						createdAt: string;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the Ressource itself last changed.
+						 */
 						updatedAt: string;
 					};
 				};
@@ -5558,13 +7478,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5584,13 +7514,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5610,13 +7550,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5636,13 +7586,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5662,15 +7622,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -5695,13 +7667,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5721,13 +7703,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5766,28 +7758,54 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Booking id.
+							 */
 							id: string;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description Start of the booking, in UTC.
+							 */
 							startDate: string;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description End of the booking, in UTC.
+							 */
 							endDate: string;
+							/** @description Free-text note on the booking. */
 							note: string | null;
+							/** @description The booked Ressource; its `timeZone` places the booking on a local day. */
 							resource: {
-								/** Format: uuid */
+								/**
+								 * Format: uuid
+								 * @description Ressource id.
+								 */
 								id: string;
+								/** @description Ressource name. */
 								name: string;
 							};
+							/** @description Employees assigned to the booking; empty while nobody is assigned. */
 							employees: {
-								/** Format: uuid */
+								/**
+								 * Format: uuid
+								 * @description Employee id.
+								 */
 								userId: string;
+								/** @description Name shown in the app. */
 								displayName: string;
+								/** @description First and last name. */
 								fullName: string;
 							}[];
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description When the booking or its assignments last changed.
+							 */
 							updatedAt: string;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -5807,13 +7825,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5833,13 +7861,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5859,13 +7897,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5885,13 +7933,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5911,15 +7969,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -5944,13 +8014,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -5970,13 +8050,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6009,25 +8099,49 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Booking id.
+						 */
 						id: string;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description Start of the booking, in UTC.
+						 */
 						startDate: string;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description End of the booking, in UTC.
+						 */
 						endDate: string;
+						/** @description Free-text note on the booking. */
 						note: string | null;
+						/** @description The booked Ressource; its `timeZone` places the booking on a local day. */
 						resource: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Ressource id.
+							 */
 							id: string;
+							/** @description Ressource name. */
 							name: string;
 						};
+						/** @description Employees assigned to the booking; empty while nobody is assigned. */
 						employees: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Employee id.
+							 */
 							userId: string;
+							/** @description Name shown in the app. */
 							displayName: string;
+							/** @description First and last name. */
 							fullName: string;
 						}[];
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the booking or its assignments last changed.
+						 */
 						updatedAt: string;
 					};
 				};
@@ -6047,13 +8161,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6073,13 +8197,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6099,13 +8233,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6125,13 +8269,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6151,15 +8305,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -6184,13 +8350,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6210,13 +8386,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6257,24 +8443,48 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Absence request id.
+							 */
 							id: string;
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Employee who is absent.
+							 */
 							userId: string;
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Absence type, from `GET /options/absence-types`.
+							 */
 							absenceTypeId: string;
-							/** @enum {string} */
+							/**
+							 * @description Where the request stands in approval.
+							 * @enum {string}
+							 */
 							status: 'opened' | 'booked' | 'approved' | 'canceled' | 'rejected';
+							/** @description First absent day, as `YYYY-MM-DD`. */
 							startDate: string;
+							/** @description Last absent day, as `YYYY-MM-DD`. */
 							endDate: string;
+							/** @description Employee standing in during the absence. */
 							substituteUserId: string | null;
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Employee who filed the request.
+							 */
 							createdByUserId: string;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description When the request was filed.
+							 */
 							createdAt: string;
+							/** @description When the request was archived. */
 							archivedAt: string | null;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -6294,13 +8504,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6320,13 +8540,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6346,13 +8576,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6372,13 +8612,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6398,15 +8648,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -6431,13 +8693,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6457,13 +8729,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6496,21 +8778,43 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Absence request id.
+						 */
 						id: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Employee who is absent.
+						 */
 						userId: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Absence type, from `GET /options/absence-types`.
+						 */
 						absenceTypeId: string;
-						/** @enum {string} */
+						/**
+						 * @description Where the request stands in approval.
+						 * @enum {string}
+						 */
 						status: 'opened' | 'booked' | 'approved' | 'canceled' | 'rejected';
+						/** @description First absent day, as `YYYY-MM-DD`. */
 						startDate: string;
+						/** @description Last absent day, as `YYYY-MM-DD`. */
 						endDate: string;
+						/** @description Employee standing in during the absence. */
 						substituteUserId: string | null;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Employee who filed the request.
+						 */
 						createdByUserId: string;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the request was filed.
+						 */
 						createdAt: string;
+						/** @description When the request was archived. */
 						archivedAt: string | null;
 					};
 				};
@@ -6530,13 +8834,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6556,13 +8870,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6582,13 +8906,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6608,13 +8942,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6634,15 +8978,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -6667,13 +9023,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6693,13 +9059,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6733,14 +9109,25 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description Employees with at least one absent day in the window. */
 						items: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Employee id.
+							 */
 							userId: string;
+							/** @description Absent days in the window; a day split between two types appears twice. */
 							days: {
+								/** @description Absent day, as `YYYY-MM-DD`. */
 								date: string;
-								/** Format: uuid */
+								/**
+								 * Format: uuid
+								 * @description Absence type applying on the day.
+								 */
 								absenceTypeId: string;
+								/** @description Name of the type, or its public stand-in when `isRedacted`. */
 								absenceTypeName: string;
+								/** @description `true` when the key lacks `view_absence_requests_for_others` for the employee. */
 								isRedacted: boolean;
 							}[];
 						}[];
@@ -6762,13 +9149,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6788,13 +9185,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6814,13 +9221,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6840,13 +9257,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6866,15 +9293,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -6899,13 +9338,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6925,13 +9374,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -6967,11 +9426,19 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Employee id.
+							 */
 							userId: string;
-							/** @enum {string} */
+							/**
+							 * @description `working` while a time entry runs, `absent` when an approved or booked absence covers today, `away` otherwise.
+							 * @enum {string}
+							 */
 							status: 'working' | 'absent' | 'away';
+							/** @description Work type of the running time entry. */
 							workType:
 								| (
 										| 'worktime'
@@ -6983,14 +9450,22 @@ export interface operations {
 										| 'home_office'
 								  )
 								| null;
+							/** @description Start of the running time entry. */
 							since: string | null;
+							/** @description Absence types covering today, also for an employee who is `working`. */
 							absenceTypes: {
-								/** Format: uuid */
+								/**
+								 * Format: uuid
+								 * @description Absence type id.
+								 */
 								id: string;
+								/** @description Name of the type, or its public stand-in when `isRedacted`. */
 								name: string;
+								/** @description `true` when the key lacks `view_absence_requests_for_others` for the employee. */
 								isRedacted: boolean;
 							}[];
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -7010,13 +9485,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7036,13 +9521,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7062,13 +9557,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7088,13 +9593,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7114,15 +9629,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -7147,13 +9674,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7173,13 +9710,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7218,25 +9765,46 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Employee id.
+							 */
 							userId: string;
+							/** @description Reported day, as `YYYY-MM-DD`. */
 							date: string;
+							/** @description Worked minutes across all work types. */
 							totalWorkMinutes: number;
+							/** @description Minutes of `worktime` entries. */
 							regularWorkMinutes: number;
+							/** @description Minutes of `home_office` entries. */
 							homeOfficeMinutes: number;
+							/** @description Minutes of `travel_time` entries. */
 							travelMinutes: number;
+							/** @description Minutes of `bad_weather` entries. */
 							badWeatherMinutes: number;
+							/** @description Minutes of `community_service` entries. */
 							communityServiceMinutes: number;
+							/** @description Break minutes. */
 							breakMinutes: number;
+							/** @description Minutes the employee was due to work that day. */
 							targetWorkMinutes: number | null;
+							/** @description Overtime gained (positive) or lost (negative) on the day. */
 							balanceMinutes: number | null;
+							/** @description Flextime gained (positive) or lost (negative) on the day. */
 							flexBalanceMinutes: number | null;
+							/** @description Start of the first work of the day, as an ISO time. */
 							startWorkTime: string | null;
+							/** @description End of the last work of the day, as an ISO time. */
 							endWorkTime: string | null;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description When the report was last recalculated.
+							 */
 							updatedAt: string;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -7256,13 +9824,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7282,13 +9860,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7308,13 +9896,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7334,13 +9932,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7360,15 +9968,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -7393,13 +10013,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7419,13 +10049,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7464,21 +10104,41 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Form submission id.
+							 */
 							id: string;
+							/** @description Name of the form. */
 							name: string;
+							/** @description Template the submission was filled in from; `null` for a one-off form. */
 							templateId: string | null;
-							/** @enum {string} */
+							/**
+							 * @description `DRAFT` while being filled in, then `COMPLETED`.
+							 * @enum {string}
+							 */
 							status: 'DRAFT' | 'COMPLETED';
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Employee who started the submission.
+							 */
 							createdByUserId: string;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description When the submission was started.
+							 */
 							createdAt: string;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description When the submission last changed.
+							 */
 							updatedAt: string;
+							/** @description When the submission was archived. */
 							archivedAt: string | null;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -7498,13 +10158,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7524,13 +10194,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7550,13 +10230,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7576,13 +10266,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7602,15 +10302,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -7635,13 +10347,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7661,13 +10383,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7700,22 +10432,44 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Form submission id.
+						 */
 						id: string;
+						/** @description Name of the form. */
 						name: string;
+						/** @description Template the submission was filled in from; `null` for a one-off form. */
 						templateId: string | null;
-						/** @enum {string} */
+						/**
+						 * @description `DRAFT` while being filled in, then `COMPLETED`.
+						 * @enum {string}
+						 */
 						status: 'DRAFT' | 'COMPLETED';
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Employee who started the submission.
+						 */
 						createdByUserId: string;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the submission was started.
+						 */
 						createdAt: string;
-						/** Format: date-time */
+						/**
+						 * Format: date-time
+						 * @description When the submission last changed.
+						 */
 						updatedAt: string;
+						/** @description When the submission was archived. */
 						archivedAt: string | null;
+						/** @description Top-level fields in form order. */
 						fields: {
+							/** @description Stable identifier of the field within the form. */
 							key: string;
+							/** @description Field label. */
 							name: string;
+							/** @description Entered value; a relation reports the referenced id. `null` for nested and binary values. */
 							value: string | number | boolean | null;
 						}[];
 					};
@@ -7736,13 +10490,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7762,13 +10526,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7788,13 +10562,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7814,13 +10598,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7840,15 +10634,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -7873,13 +10679,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7899,33 +10715,44 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
 			};
 		};
 	};
-	getEmployeeWage: {
+	listPayRates: {
 		parameters: {
 			query?: {
+				limit?: number;
+				offset?: number;
+				userId?: string[];
 				date?: string;
 			};
 			header?: never;
-			path: {
-				userId: string;
-			};
+			path?: never;
 			cookie?: never;
 		};
 		requestBody?: never;
 		responses: {
-			/** @description The pay rate in force on the requested date. */
+			/** @description A page of pay rates. */
 			200: {
 				headers: {
 					/** @description Identifier shared by the response, logs, and error tracking. */
@@ -7940,16 +10767,35 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
-						/** Format: uuid */
-						userId: string;
-						/** Format: uuid */
-						contractId: string;
-						date: string;
-						rateCents: number;
-						/** @enum {string} */
-						rateInterval: 'hourly' | 'monthly';
-						/** Format: uuid */
-						wageTypeId: string;
+						/** @description The items on this page. */
+						items: {
+							/**
+							 * Format: uuid
+							 * @description Employee id.
+							 */
+							userId: string;
+							/**
+							 * Format: uuid
+							 * @description Employment contract the rate comes from.
+							 */
+							contractId: string;
+							/** @description Day the rate applies on, as `YYYY-MM-DD`. */
+							date: string;
+							/** @description Pay rate in cents per `rateInterval`. */
+							rateCents: number;
+							/**
+							 * @description Whether the rate is per hour or per month.
+							 * @enum {string}
+							 */
+							rateInterval: 'hourly' | 'monthly';
+							/**
+							 * Format: uuid
+							 * @description Wage type the rate is paid under.
+							 */
+							wageTypeId: string;
+						}[];
+						/** @description Whether another page follows at `offset + limit`. */
+						hasMore: boolean;
 					};
 				};
 			};
@@ -7968,13 +10814,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -7994,13 +10850,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8020,13 +10886,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8046,13 +10922,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8072,15 +10958,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -8105,13 +11003,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8131,13 +11039,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8176,19 +11094,35 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Payment id.
+							 */
 							id: string;
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Employee the payment goes to.
+							 */
 							userId: string;
+							/** @description Day the payment is booked on for payroll, as `YYYY-MM-DD`. */
 							date: string;
+							/** @description Free-text reason for the payment. */
 							note: string;
+							/** @description Wage type the payment is booked under. */
 							wageTypeId: string | null;
+							/** @description When the payment was archived. */
 							archivedAt: string | null;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description When the payment was entered.
+							 */
 							createdAt: string;
+							/** @description Amount in cents. */
 							amountCents: number;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -8208,13 +11142,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8234,13 +11178,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8260,13 +11214,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8286,13 +11250,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8312,15 +11286,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -8345,13 +11331,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8371,13 +11367,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8416,21 +11422,39 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Payment id.
+							 */
 							id: string;
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Employee the payment goes to.
+							 */
 							userId: string;
+							/** @description Day the payment is booked on for payroll, as `YYYY-MM-DD`. */
 							date: string;
+							/** @description Free-text reason for the payment. */
 							note: string;
+							/** @description Wage type the payment is booked under. */
 							wageTypeId: string | null;
+							/** @description When the payment was archived. */
 							archivedAt: string | null;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description When the payment was entered.
+							 */
 							createdAt: string;
+							/** @description Overtime minutes paid out. */
 							payoutMinutes: number;
+							/** @description Rate the minutes are paid at, in cents per hour. */
 							centsPerHour: number;
+							/** @description `true` when the payout did not reduce the overtime balance. */
 							excludedFromOvertimeBalance: boolean;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -8450,13 +11474,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8476,13 +11510,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8502,13 +11546,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8528,13 +11582,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8554,15 +11618,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -8587,13 +11663,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8613,13 +11699,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8660,21 +11756,41 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Booking id.
+							 */
 							id: string;
-							/** Format: uuid */
+							/**
+							 * Format: uuid
+							 * @description Booked workspace, from `GET /resources`.
+							 */
 							resourceId: string;
+							/** @description Every employee on the booking. */
 							userIds: string[];
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description Start of the booking.
+							 */
 							startDate: string;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description End of the booking.
+							 */
 							endDate: string;
+							/** @description Free-text note on the booking. */
 							note: string | null;
+							/** @description When the booking was archived. */
 							archivedAt: string | null;
-							/** Format: date-time */
+							/**
+							 * Format: date-time
+							 * @description When the booking last changed.
+							 */
 							updatedAt: string;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -8694,13 +11810,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8720,13 +11846,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8746,13 +11882,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8772,13 +11918,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8798,15 +11954,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -8831,13 +11999,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8857,13 +12035,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8898,10 +12086,14 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
+							/** @description Id to send to other endpoints. */
 							value: string;
+							/** @description Name to show in the dropdown. */
 							label: string;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -8921,13 +12113,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8947,13 +12149,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8973,13 +12185,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -8999,13 +12221,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9025,15 +12257,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -9058,13 +12302,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9084,13 +12338,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9125,10 +12389,14 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
+							/** @description Id to send to other endpoints. */
 							value: string;
+							/** @description Name to show in the dropdown. */
 							label: string;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -9148,13 +12416,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9174,13 +12452,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9200,13 +12488,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9226,13 +12524,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9252,15 +12560,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -9285,13 +12605,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9311,13 +12641,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9352,10 +12692,14 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
+							/** @description Id to send to other endpoints. */
 							value: string;
+							/** @description Name to show in the dropdown. */
 							label: string;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -9375,13 +12719,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9401,13 +12755,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9427,13 +12791,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9453,13 +12827,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9479,15 +12863,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -9512,13 +12908,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9538,13 +12944,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9579,10 +12995,14 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
+							/** @description Id to send to other endpoints. */
 							value: string;
+							/** @description Name to show in the dropdown. */
 							label: string;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -9602,13 +13022,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9628,13 +13058,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9654,13 +13094,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9680,13 +13130,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9706,15 +13166,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -9739,13 +13211,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9765,13 +13247,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9806,10 +13298,14 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
+							/** @description Id to send to other endpoints. */
 							value: string;
+							/** @description Name to show in the dropdown. */
 							label: string;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -9829,13 +13325,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9855,13 +13361,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9881,13 +13397,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9907,13 +13433,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9933,15 +13469,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -9966,13 +13514,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -9992,13 +13550,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10033,10 +13601,14 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
+							/** @description Id to send to other endpoints. */
 							value: string;
+							/** @description Name to show in the dropdown. */
 							label: string;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -10056,13 +13628,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10082,13 +13664,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10108,13 +13700,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10134,13 +13736,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10160,15 +13772,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -10193,13 +13817,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10219,13 +13853,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10260,10 +13904,14 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
+							/** @description Id to send to other endpoints. */
 							value: string;
+							/** @description Name to show in the dropdown. */
 							label: string;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -10283,13 +13931,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10309,13 +13967,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10335,13 +14003,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10361,13 +14039,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10387,15 +14075,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -10420,13 +14120,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10446,13 +14156,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10487,10 +14207,14 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
+							/** @description Id to send to other endpoints. */
 							value: string;
+							/** @description Name to show in the dropdown. */
 							label: string;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -10510,13 +14234,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10536,13 +14270,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10562,13 +14306,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10588,13 +14342,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10614,15 +14378,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -10647,13 +14423,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10673,13 +14459,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10714,10 +14510,14 @@ export interface operations {
 				};
 				content: {
 					'application/json': {
+						/** @description The items on this page. */
 						items: {
+							/** @description Id to send to other endpoints. */
 							value: string;
+							/** @description Name to show in the dropdown. */
 							label: string;
 						}[];
+						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
 					};
 				};
@@ -10737,13 +14537,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10763,13 +14573,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10789,13 +14609,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10815,13 +14645,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10841,15 +14681,27 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
+						/** @description One entry per rejected input value. */
 						errors: ({
+							/** @description What is wrong with the value. */
 							message: string;
 						} & {
 							[key: string]: unknown;
@@ -10874,13 +14726,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};
@@ -10900,13 +14762,23 @@ export interface operations {
 				};
 				content: {
 					'application/problem+json': {
-						/** Format: uri */
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
 						type: string;
+						/** @description Short name of the error class. */
 						title: string;
+						/** @description HTTP status code. */
 						status: number;
+						/** @description What went wrong with this request. */
 						detail: string;
-						/** Format: uuid */
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
 						requestId: string;
+						/** @description What to do about it. */
 						resolution: string;
 					};
 				};

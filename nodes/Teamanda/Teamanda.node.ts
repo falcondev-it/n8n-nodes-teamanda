@@ -6,7 +6,11 @@ import { dailyReportDescription } from './resources/dailyReport';
 import { employeeDescription } from './resources/employee';
 import { employeeFieldDescription } from './resources/employeeField';
 import { formSubmissionDescription } from './resources/formSubmission';
-import { overtimePayoutDescription, specialPaymentDescription } from './resources/payroll';
+import {
+	overtimePayoutDescription,
+	payRateDescription,
+	specialPaymentDescription,
+} from './resources/payroll';
 import { resourceDescription } from './resources/resource';
 import { resourceBookingDescription } from './resources/resourceBooking';
 import { taskDescription } from './resources/task';
@@ -23,6 +27,7 @@ const resourceOptions = toOptions<ResourceName>({
 	employeeField: 'Employee Field',
 	formSubmission: 'Form Submission',
 	overtimePayout: 'Overtime Payout',
+	payRate: 'Pay Rate',
 	resource: 'Resource',
 	resourceBooking: 'Resource Booking',
 	specialPayment: 'Special Payment',
@@ -72,6 +77,7 @@ export class Teamanda implements INodeType {
 			...employeeFieldDescription,
 			...formSubmissionDescription,
 			...overtimePayoutDescription,
+			...payRateDescription,
 			...resourceDescription,
 			...resourceBookingDescription,
 			...specialPaymentDescription,
