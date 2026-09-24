@@ -64,6 +64,10 @@ export const timeEntryDescription: INodeProperties[] = [
 				description: 'Delete a time entry. Teamanda keeps it as archived.',
 				routing: {
 					request: { method: 'DELETE', url: '=/time-entries/{{$parameter.timeEntryId}}' },
+					// The API answers 204 without a body.
+					output: {
+						postReceive: [{ type: 'set', properties: { value: '={{ { "deleted": true } }}' } }],
+					},
 				},
 			},
 		],
