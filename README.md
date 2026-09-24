@@ -45,8 +45,9 @@ connection test calls `GET /connection` and needs no permission beyond a valid k
 ## Usage
 
 List operations support `Return All`, pagination, their resource-specific filters, and a
-`Sort` collection. Deleting a time entry archives it in Teamanda and outputs
-`{ "deleted": true }`. Creating time entries and tasks is not idempotent, so do
+`Sort` collection. Task, time entry, and daily report operations return at most 10 fields by
+default; turn off `Simplify` to get the full response. Deleting a time entry archives it in
+Teamanda and outputs `{ "deleted": true }`. Creating time entries and tasks is not idempotent, so do
 not automatically retry it after an ambiguous timeout.
 
 Date and time values without an offset are read in the workflow's timezone and sent to the

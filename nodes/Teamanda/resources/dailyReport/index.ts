@@ -13,6 +13,18 @@ export const dailyReportDescription: INodeProperties[] = [
 		resource: 'dailyReport',
 		path: '/daily-reports',
 		nounPlural: 'daily reports',
+		simplifiedFields: [
+			'userId',
+			'date',
+			'totalWorkMinutes',
+			'targetWorkMinutes',
+			'balanceMinutes',
+			'flexBalanceMinutes',
+			'regularWorkMinutes',
+			'breakMinutes',
+			'startWorkTime',
+			'endWorkTime',
+		],
 	}),
 	...windowFilters<'listDailyReports'>('date', {
 		required: true,

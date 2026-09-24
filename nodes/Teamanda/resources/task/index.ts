@@ -63,6 +63,18 @@ export const taskDescription: INodeProperties[] = [
 			idDescription: 'ID of the task',
 			idOperations: ['get', 'update'],
 		},
+		simplifiedFields: [
+			'id',
+			'taskNumber',
+			'title',
+			'status',
+			'assignedUserId',
+			'categoryId',
+			'plannedAt',
+			'description',
+			'archivedAt',
+			'updatedAt',
+		],
 		extraOperations: [
 			{
 				name: 'Update',

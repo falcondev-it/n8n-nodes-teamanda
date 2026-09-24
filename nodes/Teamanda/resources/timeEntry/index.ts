@@ -46,6 +46,18 @@ export const timeEntryDescription: INodeProperties[] = [
 			idDescription: 'ID of the time entry',
 			idOperations: ['delete', 'get'],
 		},
+		simplifiedFields: [
+			'id',
+			'userId',
+			'type',
+			'startDate',
+			'endDate',
+			'projectId',
+			'costCenterId',
+			'description',
+			'archivedAt',
+			'updatedAt',
+		],
 		extraOperations: [
 			{
 				name: 'Create',

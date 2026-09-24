@@ -1,4 +1,9 @@
-import type { INodeProperties, INodePropertyOptions } from 'n8n-workflow';
+import type {
+	IDataObject,
+	INodeProperties,
+	INodePropertyOptions,
+	PostReceiveAction,
+} from 'n8n-workflow';
 import {
 	CALENDAR_DATE,
 	PAGE_SIZE,
@@ -46,6 +51,11 @@ export type ResourceSpec = {
 	};
 	/** Operations on top of Get and Get Many. */
 	extraOperations?: INodePropertyOptions[];
+	/**
+	 * Adds a Simplify toggle that keeps only these fields. n8n asks for one when a response has
+	 * more than 10 fields.
+	 */
+	simplifiedFields?: readonly string[];
 };
 
 /** Get, Get Many, the record ID, and the Return All / Limit pair. */
@@ -138,7 +148,37 @@ export function resourceProperties(spec: ResourceSpec): INodeProperties[] {
 			description: 'Max number of results to return',
 			routing: { send: { type: 'query', property: 'limit' } },
 		},
+		...(spec.simplifiedFields
+			? [simplifyProperty(resource, operations, spec.simplifiedFields)]
+			: []),
 	];
+}
+
+function simplifyProperty(
+	resource: ResourceName,
+	operations: INodePropertyOptions[],
+	fields: readonly string[],
+): INodeProperties {
+	const simplify: PostReceiveAction = async function (items) {
+		if (!this.getNodeParameter('simplify', true)) return items;
+		return items.map(({ json }) => ({
+			json: Object.fromEntries(fields.map((field) => [field, json[field]])) as IDataObject,
+		}));
+	};
+	return {
+		displayName: 'Simplify',
+		name: 'simplify',
+		type: 'boolean',
+		default: true,
+		description: 'Whether to return a simplified version of the response instead of the raw data',
+		displayOptions: {
+			show: {
+				operation: operations.map(({ value }) => value as string).filter((op) => op !== 'delete'),
+				resource: [resource],
+			},
+		},
+		routing: { output: { postReceive: [simplify] } },
+	};
 }
 
 /** The Filters collection every Get Many offers. */
