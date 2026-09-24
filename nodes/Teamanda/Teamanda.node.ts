@@ -28,7 +28,7 @@ const resourceOptions = toOptions<ResourceName>({
 	specialPayment: 'Special Payment',
 	task: 'Task',
 	timeEntry: 'Time Entry',
-	workspaceEntry: 'Workspace Booking',
+	workspaceEntry: 'Resource Entry',
 });
 
 export class Teamanda implements INodeType {

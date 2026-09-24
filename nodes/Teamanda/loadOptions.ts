@@ -40,8 +40,8 @@ const workTypeLabels: Record<Body<'createTimeEntry'>['type'], string> = {
 	bad_weather: 'Bad Weather',
 	breaktime: 'Break Time',
 	community_service: 'Community Service',
-	home_office: 'Home Office',
-	off_time: 'Off Time',
+	home_office: 'Remote Work',
+	off_time: 'Outside Working Hours',
 	travel_time: 'Travel Time',
 	worktime: 'Work Time',
 };

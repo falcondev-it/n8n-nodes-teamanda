@@ -27,10 +27,10 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 - Overtime Payout: Get Many
 - Resource: Get, Get Many
 - Resource Booking: Get, Get Many
+- Resource Entry: Get Many
 - Special Payment: Get Many
 - Task: Create, Get, Get Many, Update
 - Time Entry: Create, Delete, Get, Get Many
-- Workspace Booking: Get Many
 
 Employees, teams, projects, cost centers, work types, resources, task categories, and employee
 fields are offered as dropdowns loaded from the API.
