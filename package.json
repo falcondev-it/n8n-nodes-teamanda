@@ -16,8 +16,9 @@
 		"n8n-community-node-package"
 	],
 	"author": {
-		"name": "Lernni",
-		"email": "lernni@users.noreply.github.com"
+		"name": "falconDev IT GmbH",
+		"email": "info@falcondev.de",
+		"url": "https://falcondev.de"
 	},
 	"repository": {
 		"type": "git",
