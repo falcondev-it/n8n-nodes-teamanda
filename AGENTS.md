@@ -77,8 +77,9 @@ project _may_ contain example nodes and/or credentials that need to be
 - **Always** address any lint/typecheck errors/warnings, unless there is a
   **very specific reason** to ignore/disable it
 - Make sure to use **proper types whenever possible**
-- If you are updating the npm package version, make sure to **update
-  CHANGELOG.md** in the root of the repository
+- Publish only through the "🔖 Release" GitHub Actions workflow, never
+  locally (see `.agents/workflow.md`). Release notes live in the GitHub
+  releases; there is no CHANGELOG.md
 - Read `.agents/workflow.md` for more info
 
 ## Context-specific docs
@@ -96,7 +97,7 @@ Load these before working on the relevant area:
 ## Additional resources
 If you need any extra information, here are links to n8n's official docs
 regarding building community nodes:
-- https://docs.n8n.io/integrations/community-nodes/build-community-nodes/
-- https://docs.n8n.io/integrations/creating-nodes/overview/
-- https://docs.n8n.io/integrations/creating-nodes/build/reference/
-- https://docs.n8n.io/integrations/creating-nodes/build/reference/ux-guidelines/
+- https://docs.n8n.io/integrations/community-nodes/building-community-nodes
+- https://docs.n8n.io/connect/create-nodes/overview
+- https://docs.n8n.io/connect/create-nodes/build-your-node/reference
+- https://docs.n8n.io/connect/create-nodes/build-your-node/reference/ux-guidelines

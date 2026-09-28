@@ -36,7 +36,7 @@ When asked to build or update a node in this project, follow these steps:
    - Build the project to ensure it actually builds
    - Run the linter to make sure that there aren't any warnings or
      errors
-   - Ensure UX follows the [n8n UX guidelines](https://docs.n8n.io/integrations/creating-nodes/build/reference/ux-guidelines/)
+   - Ensure UX follows the [n8n UX guidelines](https://docs.n8n.io/connect/create-nodes/build-your-node/reference/ux-guidelines)
    - Ensure the credentials are secure (sensitive values **are marked as
      `password`**, **no secrets logged** and **there aren't any
      hardcoded secrets**)
@@ -65,8 +65,9 @@ When asked to build or update a node in this project, follow these steps:
   allow the user to manually test the node in n8n to verify that it does what
   is expected
 - Make sure to use **proper types whenever possible**
-- If you are updating the npm package version, make sure to **update
-  CHANGELOG.md** in the root of the repository
+- Release notes live in the GitHub releases, generated from the commits by
+  the release workflow (changelogithub). There is no CHANGELOG.md. See
+  [Releases](#releases)
 
 ## CLI
 This project uses n8n's CLI tool for developing community nodes: `n8n-node`. It
@@ -87,11 +88,13 @@ commands. Short overview of the commands:
   `n8n-node cloud-support enable` to enable strict mode + default ESLint config
   or `n8n-node cloud-support disable` to allow custom ESLint config (disables
   cloud eligibility)
-- `n8n-node release` - publish your community node package to npm.
-  This command handles the complete release process using `release-it`:
-  - Builds the node
-  - Runs linting checks
-  - Updates changelog
-  - Creates git tags
-  - Creates GitHub releases
-  - Publishes to npm
+- `n8n-node release` - **don't use it.** It publishes from the local machine
+  without npm provenance, which n8n's verification rejects.
+
+## Releases
+Releases run only through the "🔖 Release" GitHub Actions workflow
+(`.github/workflows/release.yml`): start it with `workflow_dispatch` and pick
+patch, minor or major. It bumps the version, tags the commit, generates the
+GitHub release notes with changelogithub and calls `deploy.yml`, which lints,
+builds and publishes to npm with provenance through npm trusted publishing.
+Never run `npm publish` or `pnpm publish` locally.
