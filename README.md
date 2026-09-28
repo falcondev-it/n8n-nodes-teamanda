@@ -9,6 +9,7 @@ form, and scheduling data and manage time entries and tasks through the Teamanda
 [Operations](#operations)
 [Credentials](#credentials)
 [Usage](#usage)
+[Example workflows](#example-workflows)
 [Resources](#resources)
 [Version history](#version-history)
 
@@ -59,6 +60,12 @@ The checked-in API types are generated from Teamanda's OpenAPI document. Maintai
 refresh them with `pnpm api:update`; normal builds do not require network access. Every
 request routing refers to its operation through the generated types, so an endpoint or
 parameter that Teamanda renames fails the build.
+
+## Example workflows
+
+- [Monitor fire safety training](https://github.com/falcondev-it/n8n-nodes-teamanda/blob/dev/examples/fire-safety-training.workflow.json):
+  creates a Teamanda task every day for each active employee whose last fire safety training
+  is older than 6 months. Import the file in n8n and follow the setup steps in its sticky note.
 
 ## Resources
 

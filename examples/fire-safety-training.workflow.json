@@ -1,0 +1,249 @@
+{
+	"name": "Teamanda: Monitor fire safety training",
+	"nodes": [
+		{
+			"parameters": {
+				"content": "## Monitor fire safety training\nCreates a Teamanda task every day when an active employee's last fire safety training is older than 6 months.\n\n**Setup**\n1. Select your Teamanda credentials in all Teamanda nodes\n2. In **Create Task**, choose the category and assignee\n3. In **Get Open Fire Safety Tasks**, set the category filter to the same category as in **Create Task**\n4. Set the key of the employee field holding the training date in **Get Employees** and as `FIELD_TRAINING` in the Code node",
+				"height": 320,
+				"width": 420
+			},
+			"id": "5b0c8f2e-3c1d-4f7a-9e2b-6a4d1c8e7f10",
+			"name": "Sticky Note",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [-1760, 560]
+		},
+		{
+			"parameters": {
+				"rule": {
+					"interval": [
+						{
+							"triggerAtHour": 6
+						}
+					]
+				}
+			},
+			"id": "d265c793-9a27-42ee-9fb5-14af45158d8d",
+			"name": "Daily at 06:00",
+			"type": "n8n-nodes-base.scheduleTrigger",
+			"typeVersion": 1.2,
+			"position": [-1712, 944]
+		},
+		{
+			"parameters": {
+				"returnAll": true,
+				"filters": {
+					"fields": ["course-date-fire-protection-assistant"],
+					"status": "active"
+				},
+				"sort": {},
+				"requestOptions": {}
+			},
+			"id": "79efe3fc-9b44-4014-aa21-e3c0c3f4e50c",
+			"name": "Get Employees",
+			"type": "@falcondev-it/n8n-nodes-teamanda.teamanda",
+			"typeVersion": 1,
+			"position": [-1488, 944],
+			"credentials": {
+				"teamandaApi": {
+					"name": "Teamanda account"
+				}
+			}
+		},
+		{
+			"parameters": {
+				"resource": "task",
+				"returnAll": true,
+				"filters": {
+					"archived": false,
+					"categoryId": [],
+					"status": ["open", "in_progress"]
+				},
+				"sort": {},
+				"requestOptions": {}
+			},
+			"id": "93e131cc-01ae-48fb-9e20-52ca9ef63eda",
+			"name": "Get Open Fire Safety Tasks",
+			"type": "@falcondev-it/n8n-nodes-teamanda.teamanda",
+			"typeVersion": 1,
+			"position": [-1264, 944],
+			"executeOnce": true,
+			"alwaysOutputData": true,
+			"credentials": {
+				"teamandaApi": {
+					"name": "Teamanda account"
+				}
+			},
+			"notes": "Category must match Create Task",
+			"notesInFlow": true
+		},
+		{
+			"parameters": {
+				"jsCode": "// ================== CONFIGURATION ==================\n// Attribute KEYS (not display names) – visible under `attributes` in the output of \"Get Employees\"\nconst FIELD_TRAINING   = 'course-date-fire-protection-assistant';\nconst MONTHS           = 6;     // training is due when older than this many months\nconst EMPTY_IS_DUE     = true;  // also create a task when no training date is recorded?\nconst MARKER           = 'FST-EMP:'; // duplicate-protection marker in the task description\n// ===================================================\n\n// Deduplicate employees by ID (in case pagination returns an employee twice)\nconst employees = [...new Map(\n  $('Get Employees').all().map(i => i.json).filter(e => e && e.id).map(e => [e.id, e])\n).values()];\nconst openTasks = $input.all().map(i => i.json).filter(t => t && t.id);\n\n// 1) Detect existing open / in-progress tasks\n//    a) by the marker in title/description (backslashes/HTML are stripped first,\n//       in case Teamanda stores the text as Markdown/HTML)\n//    b) additionally by the title \"Fire safety training due: <name>\"\nconst clean = s => String(s ?? '').replace(/<[^>]*>/g, ' ').replace(/\\\\/g, '');\nconst esc = s => s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\nconst markerRe = new RegExp(esc(MARKER) + '\\\\s*([A-Za-z0-9_-]+)', 'g');\nconst normTitle = s => clean(s).trim().toLowerCase().replace(/\\s+/g, ' ');\nconst hasOpenTask = new Set();\nconst openTitles = new Set();\nfor (const t of openTasks) {\n  const text = `${clean(t.title)}\\n${clean(t.description)}`;\n  for (const m of text.matchAll(markerRe)) hasOpenTask.add(m[1]);\n  openTitles.add(normTitle(t.title));\n}\n\n// 2) Parse dates (ISO or dd.MM.yyyy)\nfunction parseDate(v) {\n  if (v === undefined || v === null || String(v).trim() === '') return null;\n  const s = String(v).trim();\n  for (const d of [DateTime.fromISO(s), DateTime.fromFormat(s, 'dd.MM.yyyy'), DateTime.fromFormat(s, 'd.M.yyyy')]) {\n    if (d.isValid) return d.startOf('day');\n  }\n  return 'INVALID';\n}\nconst cutoff = $now.startOf('day').minus({ months: MONTHS });\n\n// 3) Evaluate\nconst out = [];\nfor (const e of employees) {\n  const attrs = e.attributes ?? {};\n  const name = e.fullName || e.displayName || e.id;\n  const last = parseDate(attrs[FIELD_TRAINING]);\n\n  if (last === 'INVALID') {\n    out.push({ json: { canCreate: false, reason: `Unreadable date: \"${attrs[FIELD_TRAINING]}\"`, employeeId: e.id, employeeName: name } });\n    continue;\n  }\n  const due = last === null ? EMPTY_IS_DUE : last < cutoff;\n  if (!due) continue;\n  const title = `Fire safety training due: ${name}`;\n  if (hasOpenTask.has(e.id) || openTitles.has(normTitle(title))) continue; // task already exists\n\n  const lastTxt = last ? last.toFormat('yyyy-MM-dd') : 'not recorded';\n  out.push({ json: {\n    canCreate: true,\n    employeeId: e.id,\n    employeeName: name,\n    lastTraining: lastTxt,\n    title,\n    description:\n      `The last fire safety training of ${name} was more than ${MONTHS} months ago (last training: ${lastTxt}).\\n` +\n      `Please arrange a new fire safety training.\\n\\n` +\n      `[${MARKER}${e.id}] – do not remove (duplicate protection of the automation)`,\n  } });\n}\nreturn out;\n"
+			},
+			"id": "d76c0de5-194f-40c6-b3ce-3a9970960796",
+			"name": "Find Employees Due for Training",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [-1040, 944]
+		},
+		{
+			"parameters": {
+				"conditions": {
+					"options": {
+						"caseSensitive": true,
+						"leftValue": "",
+						"typeValidation": "strict",
+						"version": 2
+					},
+					"conditions": [
+						{
+							"id": "8be2562a-e90e-472c-9ead-72093c351c23",
+							"leftValue": "={{ $json.canCreate }}",
+							"rightValue": "",
+							"operator": {
+								"type": "boolean",
+								"operation": "true",
+								"singleValue": true
+							}
+						}
+					],
+					"combinator": "and"
+				},
+				"options": {}
+			},
+			"id": "222bd6d2-9fbb-4f01-a73e-2edacb5044c7",
+			"name": "Can Create Task?",
+			"type": "n8n-nodes-base.if",
+			"typeVersion": 2.2,
+			"position": [-816, 944]
+		},
+		{
+			"parameters": {
+				"resource": "task",
+				"operation": "create",
+				"title": "={{ $json.title }}",
+				"categoryId": {
+					"__rl": true,
+					"value": "",
+					"mode": "list"
+				},
+				"assignedUserId": {
+					"__rl": true,
+					"value": "",
+					"mode": "list"
+				},
+				"additionalFields": {
+					"description": "={{ $json.description }}"
+				},
+				"requestOptions": {}
+			},
+			"id": "af03d71f-bf5a-4e8e-9423-23189ba618e1",
+			"name": "Create Task",
+			"type": "@falcondev-it/n8n-nodes-teamanda.teamanda",
+			"typeVersion": 1,
+			"position": [-592, 832],
+			"credentials": {
+				"teamandaApi": {
+					"name": "Teamanda account"
+				}
+			},
+			"onError": "continueErrorOutput",
+			"notes": "Choose Category and Assignee",
+			"notesInFlow": true
+		},
+		{
+			"parameters": {},
+			"id": "7f3b6157-a3a1-4203-b411-825b01058b2d",
+			"name": "Unreadable Date – Check Manually",
+			"type": "n8n-nodes-base.noOp",
+			"typeVersion": 1,
+			"position": [-592, 1024]
+		},
+		{
+			"parameters": {},
+			"id": "7cf45866-21b8-4aa5-af17-fc252f725b26",
+			"name": "Task Creation Failed",
+			"type": "n8n-nodes-base.noOp",
+			"typeVersion": 1,
+			"position": [-368, 944]
+		}
+	],
+	"connections": {
+		"Daily at 06:00": {
+			"main": [
+				[
+					{
+						"node": "Get Employees",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Get Employees": {
+			"main": [
+				[
+					{
+						"node": "Get Open Fire Safety Tasks",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Get Open Fire Safety Tasks": {
+			"main": [
+				[
+					{
+						"node": "Find Employees Due for Training",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Find Employees Due for Training": {
+			"main": [
+				[
+					{
+						"node": "Can Create Task?",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Can Create Task?": {
+			"main": [
+				[
+					{
+						"node": "Create Task",
+						"type": "main",
+						"index": 0
+					}
+				],
+				[
+					{
+						"node": "Unreadable Date – Check Manually",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Create Task": {
+			"main": [
+				[],
+				[
+					{
+						"node": "Task Creation Failed",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"pinData": {}
+}
