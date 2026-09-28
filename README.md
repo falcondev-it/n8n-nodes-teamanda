@@ -15,7 +15,8 @@ form, and scheduling data and manage time entries and tasks through the Teamanda
 
 ## Installation
 
-Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation.
+Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation-and-management/) in the n8n
+community nodes documentation and install the package `@falcondev-it/n8n-nodes-teamanda`.
 
 ## Operations
 
@@ -69,9 +70,9 @@ parameter that Teamanda renames fails the build.
 
 ## Resources
 
-- [n8n community nodes documentation](https://docs.n8n.io/integrations/#community-nodes)
+- [n8n community nodes documentation](https://docs.n8n.io/integrations/community-nodes/)
 - [Teamanda API documentation](https://api.teamanda.de/v1/docs)
 
 ## Version history
 
-- 0.1.0: Initial Teamanda community node.
+See the [GitHub releases](https://github.com/falcondev-it/n8n-nodes-teamanda/releases) for the changes in each version.
