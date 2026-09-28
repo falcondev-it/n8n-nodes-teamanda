@@ -1,6 +1,6 @@
 {
 	"name": "@falcondev-it/n8n-nodes-teamanda",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "n8n community node for the Teamanda API",
 	"license": "MIT",
 	"packageManager": "pnpm@11.25.0",
