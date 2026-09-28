@@ -286,6 +286,7 @@ export function sortProperty<Id extends OperationWith<'sort'>>(
 			value,
 		};
 	});
+	const defaultSort = values[0];
 	return {
 		displayName: 'Sort',
 		name: 'sort',
@@ -294,13 +295,12 @@ export function sortProperty<Id extends OperationWith<'sort'>>(
 		default: {},
 		displayOptions: { show: { operation: ['getAll'], resource: [resource] } },
 		options: [
-			// eslint-disable-next-line n8n-nodes-base/node-param-default-missing -- default is values[0]
 			{
 				displayName: 'Sort By',
 				name: 'sortBy',
 				type: 'options',
 				options: options.sort((a, b) => a.name.localeCompare(b.name)),
-				default: values[0],
+				default: defaultSort,
 				routing: queryRouting<Id>('sort'),
 			},
 		],
