@@ -1,4 +1,13 @@
+<a href="https://teamanda.app/">
+	<picture>
+		<source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/falcondev-it/n8n-nodes-teamanda/dev/nodes/Teamanda/teamanda.dark.svg" />
+		<img src="https://raw.githubusercontent.com/falcondev-it/n8n-nodes-teamanda/dev/nodes/Teamanda/teamanda.svg" alt="Teamanda" width="80" />
+	</picture>
+</a>
+
 # @falcondev-it/n8n-nodes-teamanda
+
+[Teamanda](https://teamanda.app/) is HR software for small and mid-sized businesses.
 
 This n8n community node lets workflows read Teamanda employee, absence, attendance, payroll,
 form, and scheduling data and manage time entries and tasks through the Teamanda REST API.
