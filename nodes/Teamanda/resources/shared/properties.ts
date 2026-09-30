@@ -19,15 +19,18 @@ import type { ListSearchMethod, LoadOptionsMethod } from '../../loadOptions';
 export type ResourceName =
 	| 'absence'
 	| 'attendance'
+	| 'costCenter'
 	| 'dailyReport'
 	| 'employee'
 	| 'employeeField'
 	| 'formSubmission'
 	| 'overtimePayout'
 	| 'payRate'
+	| 'project'
 	| 'resource'
 	| 'resourceBooking'
 	| 'specialPayment'
+	| 'tag'
 	| 'task'
 	| 'timeEntry'
 	| 'workspaceEntry';
