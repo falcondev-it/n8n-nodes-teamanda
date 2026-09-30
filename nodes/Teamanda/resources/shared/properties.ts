@@ -1,5 +1,6 @@
 import type {
 	IDataObject,
+	IExecuteSingleFunctions,
 	INodeProperties,
 	INodePropertyOptions,
 	PostReceiveAction,
@@ -9,6 +10,7 @@ import {
 	PAGE_SIZE,
 	queryRouting,
 	UTC_INSTANT,
+	type Body,
 	type OperationId,
 	type Query,
 } from '../../api';
@@ -17,50 +19,75 @@ import type { ListSearchMethod, LoadOptionsMethod } from '../../loadOptions';
 export type ResourceName =
 	| 'absence'
 	| 'attendance'
+	| 'costCenter'
 	| 'dailyReport'
 	| 'employee'
 	| 'employeeField'
 	| 'formSubmission'
 	| 'overtimePayout'
 	| 'payRate'
+	| 'project'
 	| 'resource'
 	| 'resourceBooking'
 	| 'specialPayment'
+	| 'tag'
 	| 'task'
 	| 'timeEntry'
 	| 'workspaceEntry';
 
-export type ResourceSpec = {
+type GetSpec = {
+	/** Singular lowercase noun, e.g. `employee`. */
+	noun: string;
+	/** Parameter holding the record's ID, e.g. `employeeId`. */
+	idParameter: string;
+	idDisplayName: string;
+	/** Description of the ID field, e.g. `ID of the employee`. Ignored for a resource locator. */
+	idDescription?: string;
+	/** Offers the record as a resource locator instead of a text field. */
+	idListSearchMethod?: ListSearchMethod;
+	/** Operations the ID field is shown for. Defaults to Get alone. */
+	idOperations?: string[];
+};
+
+/**
+ * The API requires its nullable fields to be present, so `body` assembles the whole request body
+ * with explicit nulls instead of per-field send routings.
+ */
+type CreateSpec<Id extends OperationId> = {
+	description: string;
+	body: (this: IExecuteSingleFunctions) => Body<Id>;
+};
+
+export type ResourceSpec<Id extends OperationId = OperationId> = {
 	resource: ResourceName;
 	/** Collection path, e.g. `/employees`. */
 	path: string;
 	/** Plural lowercase noun, e.g. `employees`. */
 	nounPlural: string;
-	/** Adds a Get operation and the record ID field. Omit for list-only resources. */
-	get?: {
-		/** Singular lowercase noun, e.g. `employee`. */
-		noun: string;
-		/** Parameter holding the record's ID, e.g. `employeeId`. */
-		idParameter: string;
-		idDisplayName: string;
-		/** Description of the ID field, e.g. `ID of the employee`. Ignored for a resource locator. */
-		idDescription?: string;
-		/** Offers the record as a resource locator instead of a text field. */
-		idListSearchMethod?: ListSearchMethod;
-		/** Operations the ID field is shown for. Defaults to Get alone. */
-		idOperations?: string[];
-	};
-	/** Operations on top of Get and Get Many. */
+	/** Operations on top of Get, Get Many, and Create. */
 	extraOperations?: INodePropertyOptions[];
 	/**
 	 * Adds a Simplify toggle that keeps only these fields. n8n asks for one when a response has
 	 * more than 10 fields.
 	 */
 	simplifiedFields?: readonly string[];
-};
+} & (
+	| {
+			/** Adds a Get operation and the record ID field. Omit for list-only resources. */
+			get?: GetSpec;
+			create?: undefined;
+	  }
+	| {
+			get: GetSpec;
+			/** Adds a Create operation that POSTs to the collection path. */
+			create: CreateSpec<Id>;
+	  }
+);
 
 /** Get, Get Many, the record ID, and the Return All / Limit pair. */
-export function resourceProperties(spec: ResourceSpec): INodeProperties[] {
+export function resourceProperties<Id extends OperationId = OperationId>(
+	spec: ResourceSpec<Id>,
+): INodeProperties[] {
 	const { resource, path, nounPlural, get } = spec;
 	const forGetMany = { operation: ['getAll'], resource: [resource] };
 
@@ -101,6 +128,26 @@ export function resourceProperties(spec: ResourceSpec): INodeProperties[] {
 			action: `Get ${get.noun}`,
 			description: `Retrieve ${article} ${get.noun}`,
 			routing: { request: { method: 'GET', url: `=${path}/{{$parameter.${get.idParameter}}}` } },
+		});
+	}
+	if (spec.create) {
+		const { body } = spec.create;
+		operations.push({
+			name: 'Create',
+			value: 'create',
+			action: `Create ${spec.get.noun}`,
+			description: spec.create.description,
+			routing: {
+				request: { method: 'POST', url: path },
+				send: {
+					preSend: [
+						async function (requestOptions) {
+							requestOptions.body = body.call(this) as IDataObject;
+							return requestOptions;
+						},
+					],
+				},
+			},
 		});
 	}
 
@@ -179,6 +226,12 @@ function simplifyProperty(
 		},
 		routing: { output: { postReceive: [simplify] } },
 	};
+}
+
+/** The ID an optional locator in Additional Fields holds, or `null` when it is empty. */
+export function optionalId(this: IExecuteSingleFunctions, field: string): string | null {
+	const path = `additionalFields.${field}`;
+	return (this.getNodeParameter(path, '', { extractValue: true }) as string) || null;
 }
 
 /** Picks a single record from `method`'s list, or takes its ID. */

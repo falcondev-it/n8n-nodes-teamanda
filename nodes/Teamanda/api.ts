@@ -38,6 +38,11 @@ export function toUtc(dateTime: unknown, timeZone: string): string {
 	return tryToParseDateTime(dateTime, timeZone).toUTC().toISO() as string;
 }
 
+/** The calendar date (`YYYY-MM-DD`) of a date value, read in the workflow's timezone. */
+export function toCalendarDate(date: unknown, timeZone: string): string {
+	return tryToParseDateTime(date, timeZone).toISODate() as string;
+}
+
 /** `toUtc` for routing expressions, where luxon already defaults to the workflow's timezone. */
 export const UTC_INSTANT = '={{ DateTime.fromISO(String($value)).toUTC().toISO() }}';
 

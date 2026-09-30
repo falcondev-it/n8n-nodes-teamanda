@@ -1,9 +1,4 @@
-import type {
-	IDataObject,
-	IExecuteSingleFunctions,
-	INodeProperties,
-	PreSendAction,
-} from 'n8n-workflow';
+import type { IDataObject, INodeProperties } from 'n8n-workflow';
 import { queryRouting, toUtc, type Body } from '../../api';
 import {
 	archivedFilter,
@@ -12,41 +7,17 @@ import {
 	filterProperties,
 	locator,
 	multiDropdown,
+	optionalId,
 	resourceProperties,
 	sortProperty,
 	updatedSinceFilter,
 	windowFilters,
 } from '../shared/properties';
 
-type CreateTimeEntryBody = Body<'createTimeEntry'>;
-
-function optionalId(this: IExecuteSingleFunctions, field: string): string | null {
-	const path = `additionalFields.${field}`;
-	return (this.getNodeParameter(path, '', { extractValue: true }) as string) || null;
-}
-
-// The API requires costCenterId/projectId/tagId/description to be present, so the whole body is
-// assembled here with explicit nulls instead of per-field send routings.
-const sendCreateBody: PreSendAction = async function (requestOptions) {
-	const additionalFields = this.getNodeParameter('additionalFields', {}) as IDataObject;
-	const body: CreateTimeEntryBody = {
-		userId: this.getNodeParameter('employeeId', undefined, { extractValue: true }) as string,
-		type: this.getNodeParameter('type') as CreateTimeEntryBody['type'],
-		startDate: toUtc(this.getNodeParameter('startDate'), this.getTimezone()),
-		endDate: toUtc(this.getNodeParameter('endDate'), this.getTimezone()),
-		costCenterId: optionalId.call(this, 'costCenterId'),
-		projectId: optionalId.call(this, 'projectId'),
-		tagId: (additionalFields.tagId as string) || null,
-		description: (additionalFields.description as string) || null,
-	};
-	requestOptions.body = body;
-	return requestOptions;
-};
-
 const showOnlyForCreate = { operation: ['create'], resource: ['timeEntry'] };
 
 export const timeEntryDescription: INodeProperties[] = [
-	...resourceProperties({
+	...resourceProperties<'createTimeEntry'>({
 		resource: 'timeEntry',
 		path: '/time-entries',
 		nounPlural: 'time entries',
@@ -71,16 +42,6 @@ export const timeEntryDescription: INodeProperties[] = [
 		],
 		extraOperations: [
 			{
-				name: 'Create',
-				value: 'create',
-				action: 'Create time entry',
-				description: 'Create a new completed time entry',
-				routing: {
-					request: { method: 'POST', url: '/time-entries' },
-					send: { preSend: [sendCreateBody] },
-				},
-			},
-			{
 				name: 'Delete',
 				value: 'delete',
 				action: 'Delete time entry',
@@ -94,6 +55,25 @@ export const timeEntryDescription: INodeProperties[] = [
 				},
 			},
 		],
+		create: {
+			description: 'Create a new completed time entry',
+			body() {
+				const additionalFields = this.getNodeParameter('additionalFields', {}) as IDataObject;
+				const timeZone = this.getTimezone();
+				return {
+					userId: this.getNodeParameter('employeeId', undefined, {
+						extractValue: true,
+					}) as string,
+					type: this.getNodeParameter('type') as Body<'createTimeEntry'>['type'],
+					startDate: toUtc(this.getNodeParameter('startDate'), timeZone),
+					endDate: toUtc(this.getNodeParameter('endDate'), timeZone),
+					costCenterId: optionalId.call(this, 'costCenterId'),
+					projectId: optionalId.call(this, 'projectId'),
+					tagId: optionalId.call(this, 'tagId'),
+					description: (additionalFields.description as string) || null,
+				};
+			},
+		},
 	}),
 	{
 		displayName: 'Employee',
@@ -135,17 +115,23 @@ export const timeEntryDescription: INodeProperties[] = [
 		default: {},
 		displayOptions: { show: showOnlyForCreate },
 		options: [
-			{ displayName: 'Description', name: 'description', type: 'string', default: '' },
-			{ displayName: 'NFC Tag ID', name: 'tagId', type: 'string', default: '' },
 			{
 				displayName: 'Cost Center',
 				name: 'costCenterId',
 				...locator('searchCostCenters'),
 			},
+			{ displayName: 'Description', name: 'description', type: 'string', default: '' },
 			{
 				displayName: 'Project',
 				name: 'projectId',
 				...locator('searchProjects'),
+			},
+			{
+				displayName: 'Tag',
+				name: 'tagId',
+				...locator('searchTags'),
+				description:
+					'With a project, the tag must be available everywhere or assigned to that project. Without one, it must be available everywhere or assigned to no project.',
 			},
 		],
 	},

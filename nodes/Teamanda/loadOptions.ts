@@ -77,6 +77,7 @@ const workTypeLabels: Record<Body<'createTimeEntry'>['type'], string> = {
 
 export const loadOptions = {
 	getEmployees: fromOptionsEndpoint('/options/employees'),
+	getProjects: fromOptionsEndpoint('/options/projects'),
 	getResources: fromOptionsEndpoint('/options/workspaces'),
 	getTaskCategories: fromOptionsEndpoint('/options/task-categories'),
 	getTeams: fromOptionsEndpoint('/options/teams'),
@@ -103,6 +104,7 @@ export const listSearch = {
 	searchEmployees: searchOptionsEndpoint('/options/employees'),
 	searchProjects: searchOptionsEndpoint('/options/projects'),
 	searchResources: searchOptionsEndpoint('/options/workspaces'),
+	searchTags: searchOptionsEndpoint('/options/tags'),
 	searchTaskCategories: searchOptionsEndpoint('/options/task-categories'),
 	async searchTasks(
 		this: ILoadOptionsFunctions,

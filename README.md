@@ -10,7 +10,8 @@
 [Teamanda](https://teamanda.app/) is HR software for small and mid-sized businesses.
 
 This n8n community node lets workflows read Teamanda employee, absence, attendance, payroll,
-form, and scheduling data and manage time entries and tasks through the Teamanda REST API.
+form, and scheduling data and manage time entries, tasks, projects, tags, and cost centers
+through the Teamanda REST API.
 
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/sustainable-use-license/) workflow automation platform.
 
@@ -31,22 +32,25 @@ community nodes documentation and install the package `@falcondev-it/n8n-nodes-t
 
 - Absence: Get, Get Absent Employees, Get Many
 - Attendance: Get Many
+- Cost Center: Create, Get, Get Many
 - Daily Report: Get Many
 - Employee: Get, Get Many
 - Employee Field: Get Many
 - Form Submission: Get, Get Many
 - Overtime Payout: Get Many
 - Pay Rate: Get Many
+- Project: Create, Get, Get Many
 - Resource: Get, Get Many
 - Resource Booking: Get, Get Many
 - Resource Entry: Get Many
 - Special Payment: Get Many
+- Tag: Create, Get, Get Many
 - Task: Create, Get, Get Many, Update
 - Time Entry: Create, Delete, Get, Get Many
 
-Single employees, resources, tasks, task categories, projects, and cost centers are picked
-from a list or entered by ID. Teams, work types, and employee fields are offered as
-dropdowns loaded from the API.
+Single employees, resources, tasks, task categories, projects, tags, and cost centers are picked
+from a list or entered by ID. Teams, work types, employee fields, and the projects of a new tag
+are offered as dropdowns loaded from the API.
 
 ## Credentials
 
@@ -60,8 +64,10 @@ connection test calls `GET /connection` and needs no permission beyond a valid k
 List operations support `Return All`, pagination, their resource-specific filters, and a
 `Sort` collection. Task, time entry, and daily report operations return at most 10 fields by
 default; turn off `Simplify` to get the full response. Deleting a time entry archives it in
-Teamanda and outputs `{ "deleted": true }`. Creating time entries and tasks is not idempotent, so do
-not automatically retry it after an ambiguous timeout.
+Teamanda and outputs `{ "deleted": true }`. Creating time entries, tasks, projects, tags,
+and cost centers (unless a number is given) is not idempotent, so do not automatically
+retry it after an ambiguous timeout. Project members, locations, and custom fields cannot be
+set through the API.
 
 Date and time values without an offset are read in the workflow's timezone and sent to the
 API as UTC.

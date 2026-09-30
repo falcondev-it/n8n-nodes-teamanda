@@ -1,4 +1,4 @@
-import type { IDataObject, INodeProperties, PreSendAction } from 'n8n-workflow';
+import type { IDataObject, INodeProperties } from 'n8n-workflow';
 import { queryRouting, toOptions, toUtc, UTC_INSTANT, type Body } from '../../api';
 import {
 	archivedFilter,
@@ -10,7 +10,6 @@ import {
 	updatedSinceFilter,
 } from '../shared/properties';
 
-type CreateTaskBody = Body<'createTask'>;
 type UpdateTaskBody = Body<'updateTask'>;
 
 const statusOptions = toOptions<NonNullable<UpdateTaskBody['status']>>({
@@ -20,24 +19,6 @@ const statusOptions = toOptions<NonNullable<UpdateTaskBody['status']>>({
 	open: 'Open',
 	review: 'In Review',
 });
-
-// The API requires description/plannedAt to be present, so the body is assembled here with
-// explicit nulls instead of per-field send routings.
-const sendCreateBody: PreSendAction = async function (requestOptions) {
-	const additionalFields = this.getNodeParameter('additionalFields', {}) as IDataObject;
-	const plannedAt = additionalFields.plannedAt as string | undefined;
-	const body: CreateTaskBody = {
-		title: this.getNodeParameter('title') as string,
-		categoryId: this.getNodeParameter('categoryId', undefined, { extractValue: true }) as string,
-		assignedUserId: this.getNodeParameter('assignedUserId', undefined, {
-			extractValue: true,
-		}) as string,
-		description: (additionalFields.description as string) || null,
-		plannedAt: plannedAt ? toUtc(plannedAt, this.getTimezone()) : null,
-	};
-	requestOptions.body = body;
-	return requestOptions;
-};
 
 const showOnlyForCreate = { operation: ['create'], resource: ['task'] };
 
@@ -54,7 +35,7 @@ const assigneeField: INodeProperties = {
 };
 
 export const taskDescription: INodeProperties[] = [
-	...resourceProperties({
+	...resourceProperties<'createTask'>({
 		resource: 'task',
 		path: '/tasks',
 		nounPlural: 'tasks',
@@ -85,17 +66,25 @@ export const taskDescription: INodeProperties[] = [
 				description: 'Change only the given fields of a task',
 				routing: { request: { method: 'PATCH', url: '=/tasks/{{$parameter.taskId}}' } },
 			},
-			{
-				name: 'Create',
-				value: 'create',
-				action: 'Create task',
-				description: 'Create a new task. Not idempotent.',
-				routing: {
-					request: { method: 'POST', url: '/tasks' },
-					send: { preSend: [sendCreateBody] },
-				},
-			},
 		],
+		create: {
+			description: 'Create a new task. Not idempotent.',
+			body() {
+				const additionalFields = this.getNodeParameter('additionalFields', {}) as IDataObject;
+				const plannedAt = additionalFields.plannedAt as string | undefined;
+				return {
+					title: this.getNodeParameter('title') as string,
+					categoryId: this.getNodeParameter('categoryId', undefined, {
+						extractValue: true,
+					}) as string,
+					assignedUserId: this.getNodeParameter('assignedUserId', undefined, {
+						extractValue: true,
+					}) as string,
+					description: (additionalFields.description as string) || null,
+					plannedAt: plannedAt ? toUtc(plannedAt, this.getTimezone()) : null,
+				};
+			},
+		},
 	}),
 	{
 		displayName: 'Title',
