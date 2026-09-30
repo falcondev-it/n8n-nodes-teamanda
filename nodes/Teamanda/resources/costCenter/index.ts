@@ -1,7 +1,6 @@
 import type { IDataObject, INodeProperties } from 'n8n-workflow';
 import {
 	archivedFilter,
-	createOption,
 	filterProperties,
 	resourceProperties,
 	sortProperty,
@@ -10,7 +9,7 @@ import {
 const showOnlyForCreate = { operation: ['create'], resource: ['costCenter'] };
 
 export const costCenterDescription: INodeProperties[] = [
-	...resourceProperties({
+	...resourceProperties<'createCostCenter'>({
 		resource: 'costCenter',
 		path: '/cost-centers',
 		nounPlural: 'cost centers',
@@ -20,21 +19,17 @@ export const costCenterDescription: INodeProperties[] = [
 			idDisplayName: 'Cost Center',
 			idListSearchMethod: 'searchCostCenters',
 		},
-		extraOperations: [
-			createOption<'createCostCenter'>({
-				path: '/cost-centers',
-				noun: 'cost center',
-				description: 'Create a new cost center. Not idempotent without a number.',
-				body() {
-					const additionalFields = this.getNodeParameter('additionalFields', {}) as IDataObject;
-					return {
-						name: this.getNodeParameter('name') as string,
-						billable: this.getNodeParameter('billable') as boolean,
-						customId: (additionalFields.customId as string) || null,
-					};
-				},
-			}),
-		],
+		create: {
+			description: 'Create a new cost center. Not idempotent without a number.',
+			body() {
+				const additionalFields = this.getNodeParameter('additionalFields', {}) as IDataObject;
+				return {
+					name: this.getNodeParameter('name') as string,
+					billable: this.getNodeParameter('billable') as boolean,
+					customId: (additionalFields.customId as string) || null,
+				};
+			},
+		},
 	}),
 	{
 		displayName: 'Name',

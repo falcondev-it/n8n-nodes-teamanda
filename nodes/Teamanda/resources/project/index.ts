@@ -2,7 +2,6 @@ import type { IDataObject, INodeProperties } from 'n8n-workflow';
 import { toCalendarDate } from '../../api';
 import {
 	archivedFilter,
-	createOption,
 	filterProperties,
 	locator,
 	optionalId,
@@ -14,7 +13,7 @@ import {
 const showOnlyForCreate = { operation: ['create'], resource: ['project'] };
 
 export const projectDescription: INodeProperties[] = [
-	...resourceProperties({
+	...resourceProperties<'createProject'>({
 		resource: 'project',
 		path: '/projects',
 		nounPlural: 'projects',
@@ -24,27 +23,23 @@ export const projectDescription: INodeProperties[] = [
 			idDisplayName: 'Project',
 			idListSearchMethod: 'searchProjects',
 		},
-		extraOperations: [
-			createOption<'createProject'>({
-				path: '/projects',
-				noun: 'project',
-				description:
-					'Create a new project. Not idempotent. Members, locations, and custom fields are set in Teamanda.',
-				body() {
-					const additionalFields = this.getNodeParameter('additionalFields', {}) as IDataObject;
-					const timeZone = this.getTimezone();
-					return {
-						name: this.getNodeParameter('name') as string,
-						startDateIso: toCalendarDate(this.getNodeParameter('startDate'), timeZone),
-						endDateIso: additionalFields.endDate
-							? toCalendarDate(additionalFields.endDate, timeZone)
-							: null,
-						costCenterId: optionalId.call(this, 'costCenterId'),
-						autoAssignMembers: additionalFields.autoAssignMembers as boolean | undefined,
-					};
-				},
-			}),
-		],
+		create: {
+			description:
+				'Create a new project. Not idempotent. Members, locations, and custom fields are set in Teamanda.',
+			body() {
+				const additionalFields = this.getNodeParameter('additionalFields', {}) as IDataObject;
+				const timeZone = this.getTimezone();
+				return {
+					name: this.getNodeParameter('name') as string,
+					startDateIso: toCalendarDate(this.getNodeParameter('startDate'), timeZone),
+					endDateIso: additionalFields.endDate
+						? toCalendarDate(additionalFields.endDate, timeZone)
+						: null,
+					costCenterId: optionalId.call(this, 'costCenterId'),
+					autoAssignMembers: additionalFields.autoAssignMembers as boolean | undefined,
+				};
+			},
+		},
 	}),
 	{
 		displayName: 'Name',

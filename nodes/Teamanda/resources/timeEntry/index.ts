@@ -2,7 +2,6 @@ import type { IDataObject, INodeProperties } from 'n8n-workflow';
 import { queryRouting, toUtc, type Body } from '../../api';
 import {
 	archivedFilter,
-	createOption,
 	dropdown,
 	employeesFilter,
 	filterProperties,
@@ -18,7 +17,7 @@ import {
 const showOnlyForCreate = { operation: ['create'], resource: ['timeEntry'] };
 
 export const timeEntryDescription: INodeProperties[] = [
-	...resourceProperties({
+	...resourceProperties<'createTimeEntry'>({
 		resource: 'timeEntry',
 		path: '/time-entries',
 		nounPlural: 'time entries',
@@ -42,27 +41,6 @@ export const timeEntryDescription: INodeProperties[] = [
 			'updatedAt',
 		],
 		extraOperations: [
-			createOption<'createTimeEntry'>({
-				path: '/time-entries',
-				noun: 'time entry',
-				description: 'Create a new completed time entry',
-				body() {
-					const additionalFields = this.getNodeParameter('additionalFields', {}) as IDataObject;
-					const timeZone = this.getTimezone();
-					return {
-						userId: this.getNodeParameter('employeeId', undefined, {
-							extractValue: true,
-						}) as string,
-						type: this.getNodeParameter('type') as Body<'createTimeEntry'>['type'],
-						startDate: toUtc(this.getNodeParameter('startDate'), timeZone),
-						endDate: toUtc(this.getNodeParameter('endDate'), timeZone),
-						costCenterId: optionalId.call(this, 'costCenterId'),
-						projectId: optionalId.call(this, 'projectId'),
-						tagId: optionalId.call(this, 'tagId'),
-						description: (additionalFields.description as string) || null,
-					};
-				},
-			}),
 			{
 				name: 'Delete',
 				value: 'delete',
@@ -77,6 +55,25 @@ export const timeEntryDescription: INodeProperties[] = [
 				},
 			},
 		],
+		create: {
+			description: 'Create a new completed time entry',
+			body() {
+				const additionalFields = this.getNodeParameter('additionalFields', {}) as IDataObject;
+				const timeZone = this.getTimezone();
+				return {
+					userId: this.getNodeParameter('employeeId', undefined, {
+						extractValue: true,
+					}) as string,
+					type: this.getNodeParameter('type') as Body<'createTimeEntry'>['type'],
+					startDate: toUtc(this.getNodeParameter('startDate'), timeZone),
+					endDate: toUtc(this.getNodeParameter('endDate'), timeZone),
+					costCenterId: optionalId.call(this, 'costCenterId'),
+					projectId: optionalId.call(this, 'projectId'),
+					tagId: optionalId.call(this, 'tagId'),
+					description: (additionalFields.description as string) || null,
+				};
+			},
+		},
 	}),
 	{
 		displayName: 'Employee',

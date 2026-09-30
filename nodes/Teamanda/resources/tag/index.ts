@@ -1,7 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 import {
 	archivedFilter,
-	createOption,
 	filterProperties,
 	locator,
 	multiDropdown,
@@ -14,7 +13,7 @@ import {
 const showOnlyForCreate = { operation: ['create'], resource: ['tag'] };
 
 export const tagDescription: INodeProperties[] = [
-	...resourceProperties({
+	...resourceProperties<'createTag'>({
 		resource: 'tag',
 		path: '/tags',
 		nounPlural: 'tags',
@@ -24,23 +23,19 @@ export const tagDescription: INodeProperties[] = [
 			idDisplayName: 'Tag',
 			idListSearchMethod: 'searchTags',
 		},
-		extraOperations: [
-			createOption<'createTag'>({
-				path: '/tags',
-				noun: 'tag',
-				description: 'Create a new activity that time entries can be booked on. Not idempotent.',
-				body() {
-					const isGlobal = this.getNodeParameter('isGlobal') as boolean;
-					return {
-						name: this.getNodeParameter('name') as string,
-						color: this.getNodeParameter('color') as string,
-						isGlobal,
-						costCenterId: optionalId.call(this, 'costCenterId'),
-						projectIds: isGlobal ? [] : (this.getNodeParameter('projectIds', []) as string[]),
-					};
-				},
-			}),
-		],
+		create: {
+			description: 'Create a new activity that time entries can be booked on. Not idempotent.',
+			body() {
+				const isGlobal = this.getNodeParameter('isGlobal') as boolean;
+				return {
+					name: this.getNodeParameter('name') as string,
+					color: this.getNodeParameter('color') as string,
+					isGlobal,
+					costCenterId: optionalId.call(this, 'costCenterId'),
+					projectIds: isGlobal ? [] : (this.getNodeParameter('projectIds', []) as string[]),
+				};
+			},
+		},
 	}),
 	{
 		displayName: 'Name',
