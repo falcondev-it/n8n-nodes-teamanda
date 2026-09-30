@@ -58,7 +58,7 @@ export const timeEntryDescription: INodeProperties[] = [
 						endDate: toUtc(this.getNodeParameter('endDate'), timeZone),
 						costCenterId: optionalId.call(this, 'costCenterId'),
 						projectId: optionalId.call(this, 'projectId'),
-						tagId: (additionalFields.tagId as string) || null,
+						tagId: optionalId.call(this, 'tagId'),
 						description: (additionalFields.description as string) || null,
 					};
 				},
@@ -119,7 +119,13 @@ export const timeEntryDescription: INodeProperties[] = [
 		displayOptions: { show: showOnlyForCreate },
 		options: [
 			{ displayName: 'Description', name: 'description', type: 'string', default: '' },
-			{ displayName: 'NFC Tag ID', name: 'tagId', type: 'string', default: '' },
+			{
+				displayName: 'Tag',
+				name: 'tagId',
+				...locator('searchTags'),
+				description:
+					'With a project, the tag must be available everywhere or assigned to that project. Without one, it must be available everywhere or assigned to no project.',
+			},
 			{
 				displayName: 'Cost Center',
 				name: 'costCenterId',
