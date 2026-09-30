@@ -115,23 +115,23 @@ export const timeEntryDescription: INodeProperties[] = [
 		default: {},
 		displayOptions: { show: showOnlyForCreate },
 		options: [
+			{
+				displayName: 'Cost Center',
+				name: 'costCenterId',
+				...locator('searchCostCenters'),
+			},
 			{ displayName: 'Description', name: 'description', type: 'string', default: '' },
+			{
+				displayName: 'Project',
+				name: 'projectId',
+				...locator('searchProjects'),
+			},
 			{
 				displayName: 'Tag',
 				name: 'tagId',
 				...locator('searchTags'),
 				description:
 					'With a project, the tag must be available everywhere or assigned to that project. Without one, it must be available everywhere or assigned to no project.',
-			},
-			{
-				displayName: 'Cost Center',
-				name: 'costCenterId',
-				...locator('searchCostCenters'),
-			},
-			{
-				displayName: 'Project',
-				name: 'projectId',
-				...locator('searchProjects'),
 			},
 		],
 	},
