@@ -1,4 +1,4 @@
-import type { INodeProperties } from 'n8n-workflow';
+import type { IDataObject, INodeProperties } from 'n8n-workflow';
 import {
 	archivedFilter,
 	filterProperties,
@@ -26,13 +26,13 @@ export const tagDescription: INodeProperties[] = [
 		create: {
 			description: 'Create a new activity that time entries can be booked on. Not idempotent.',
 			body() {
-				const isGlobal = this.getNodeParameter('isGlobal') as boolean;
+				const additionalFields = this.getNodeParameter('additionalFields', {}) as IDataObject;
 				return {
 					name: this.getNodeParameter('name') as string,
 					color: this.getNodeParameter('color') as string,
-					isGlobal,
+					isGlobal: this.getNodeParameter('isGlobal') as boolean,
 					costCenterId: optionalId.call(this, 'costCenterId'),
-					projectIds: isGlobal ? [] : (this.getNodeParameter('projectIds', []) as string[]),
+					projectIds: (additionalFields.projectIds as string[] | undefined) ?? [],
 				};
 			},
 		},
@@ -62,14 +62,6 @@ export const tagDescription: INodeProperties[] = [
 		description: 'Whether the tag can be picked on every time entry, with or without a project',
 	},
 	{
-		displayName: 'Project Names or IDs',
-		name: 'projectIds',
-		...multiDropdown('getProjects'),
-		displayOptions: { show: { ...showOnlyForCreate, isGlobal: [false] } },
-		description:
-			'Projects the tag can be picked on. Leave empty to offer it only on time entries without a project. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
-	},
-	{
 		displayName: 'Additional Fields',
 		name: 'additionalFields',
 		type: 'collection',
@@ -81,6 +73,12 @@ export const tagDescription: INodeProperties[] = [
 				displayName: 'Cost Center',
 				name: 'costCenterId',
 				...locator('searchCostCenters'),
+			},
+			{
+				displayName: 'Project Names or IDs',
+				name: 'projectIds',
+				...multiDropdown('getProjects'),
+				hint: 'Without projects, a tag that is not available everywhere is offered only on time entries without a project',
 			},
 		],
 	},
