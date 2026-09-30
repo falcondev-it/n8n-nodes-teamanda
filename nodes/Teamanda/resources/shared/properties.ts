@@ -1,5 +1,6 @@
 import type {
 	IDataObject,
+	IExecuteSingleFunctions,
 	INodeProperties,
 	INodePropertyOptions,
 	PostReceiveAction,
@@ -9,6 +10,7 @@ import {
 	PAGE_SIZE,
 	queryRouting,
 	UTC_INSTANT,
+	type Body,
 	type OperationId,
 	type Query,
 } from '../../api';
@@ -179,6 +181,43 @@ function simplifyProperty(
 		},
 		routing: { output: { postReceive: [simplify] } },
 	};
+}
+
+type CreateSpec<Id extends OperationId> = {
+	path: string;
+	noun: string;
+	description: string;
+	body: (this: IExecuteSingleFunctions) => Body<Id>;
+};
+
+/**
+ * A Create operation. The API requires its nullable fields to be present, so `body` assembles the
+ * whole request body with explicit nulls instead of per-field send routings.
+ */
+export function createOption<Id extends OperationId>(spec: CreateSpec<Id>): INodePropertyOptions {
+	return {
+		name: 'Create',
+		value: 'create',
+		action: `Create ${spec.noun}`,
+		description: spec.description,
+		routing: {
+			request: { method: 'POST', url: spec.path },
+			send: {
+				preSend: [
+					async function (requestOptions) {
+						requestOptions.body = spec.body.call(this) as IDataObject;
+						return requestOptions;
+					},
+				],
+			},
+		},
+	};
+}
+
+/** The ID an optional locator in Additional Fields holds, or `null` when it is empty. */
+export function optionalId(this: IExecuteSingleFunctions, field: string): string | null {
+	const path = `additionalFields.${field}`;
+	return (this.getNodeParameter(path, '', { extractValue: true }) as string) || null;
 }
 
 /** Picks a single record from `method`'s list, or takes its ID. */
