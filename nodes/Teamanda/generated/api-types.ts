@@ -79,7 +79,7 @@ export interface paths {
 		get: operations['getEmploymentContract'];
 		/**
 		 * Replace an employment contract
-		 * @description Requires `manage_employment_contracts_for_others` for the employee. Replaces every field except the employee; `null` removes a settings section.
+		 * @description Requires `manage_employment_contracts_for_others` for the employee. Replaces every field except the employee; `null` removes a settings section. Daily work minutes must be integers, except a fractional value the contract already holds for the same model and weekday.
 		 */
 		put: operations['updateEmploymentContract'];
 		post?: never;
@@ -226,7 +226,7 @@ export interface paths {
 		};
 		/**
 		 * List resources
-		 * @description Includes archived Ressourcen. There is no locations collection to re-join the embedded `location` snapshot against. Renaming a Ressource or Standort does not move the `updatedAt` of the bookings that embed it.
+		 * @description Includes archived resources. There is no locations collection to re-join the embedded `location` snapshot against. Renaming a resource or resource location does not move the `updatedAt` of the bookings that embed it.
 		 */
 		get: operations['listResources'];
 		put?: never;
@@ -246,7 +246,7 @@ export interface paths {
 		};
 		/**
 		 * Get a resource
-		 * @description There is no locations collection to re-join the embedded `location` snapshot against. Renaming a Ressource or Standort does not move the `updatedAt` of the bookings that embed it.
+		 * @description There is no locations collection to re-join the embedded `location` snapshot against. Renaming a resource or resource location does not move the `updatedAt` of the bookings that embed it.
 		 */
 		get: operations['getResource'];
 		put?: never;
@@ -266,7 +266,7 @@ export interface paths {
 		};
 		/**
 		 * List resource bookings
-		 * @description A cancelled booking is hard-deleted, so `updatedSince` cannot express a deletion and a long-lived sync needs a periodic full resync. Renaming a Ressource or an employee shows in the embedded stubs immediately but does not move the booking’s `updatedAt`. A booking is returned only when every assigned employee is visible to the API key.
+		 * @description A cancelled booking is hard-deleted, so `updatedSince` cannot express a deletion and a long-lived sync needs a periodic full resync. Renaming a resource or an employee shows in the embedded stubs immediately but does not move the booking’s `updatedAt`. A booking is returned only when every assigned employee is visible to the API key.
 		 */
 		get: operations['listResourceBookings'];
 		put?: never;
@@ -286,9 +286,49 @@ export interface paths {
 		};
 		/**
 		 * Get a resource booking
-		 * @description Renaming a Ressource or an employee shows in the embedded stubs immediately but does not move the booking’s `updatedAt`. A booking is returned only when every assigned employee is visible to the API key.
+		 * @description Renaming a resource or an employee shows in the embedded stubs immediately but does not move the booking’s `updatedAt`. A booking is returned only when every assigned employee is visible to the API key.
 		 */
 		get: operations['getResourceBooking'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/project-assignments': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * List project assignments
+		 * @description A removed project assignment is hard-deleted, so `updatedSince` cannot express a deletion and a long-lived sync needs a periodic full resync. An assignment series stores its project assignments up to 26 weeks ahead and adds the following ones nightly. `from` and `to` are calendar dates; a project assignment overlapping the window is returned whole. Renaming a project or an employee shows in the embedded stubs immediately but does not move the project assignment’s `updatedAt`. A key targeted at teams still reads every project assignment.
+		 */
+		get: operations['listProjectAssignments'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/project-assignments/{id}': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * Get a project assignment
+		 * @description Renaming a project or an employee shows in the embedded stubs immediately but does not move the project assignment’s `updatedAt`. A key targeted at teams still reads every project assignment.
+		 */
+		get: operations['getProjectAssignment'];
 		put?: never;
 		post?: never;
 		delete?: never;
@@ -503,7 +543,7 @@ export interface paths {
 		put?: never;
 		/**
 		 * Create a project
-		 * @description Not idempotent: retrying after a timeout creates a second project. Members, Standorte and custom fields cannot be set through this API.
+		 * @description Not idempotent: retrying after a timeout creates a second project. Members, company sites and custom fields cannot be set through this API.
 		 */
 		post: operations['createProject'];
 		delete?: never;
@@ -541,7 +581,7 @@ export interface paths {
 		put?: never;
 		/**
 		 * Create a tag
-		 * @description Creates a Tätigkeit that time entries can be booked on. Not idempotent: retrying after a timeout creates a second tag.
+		 * @description Creates a tag that time entries can be booked on. Not idempotent: retrying after a timeout creates a second tag.
 		 */
 		post: operations['createTag'];
 		delete?: never;
@@ -809,7 +849,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
 	schemas: {
-		/** UndefinedError */
 		UndefinedError: {
 			/** @constant */
 			defined: false;
@@ -891,7 +930,8 @@ export interface operations {
 								| 'manage_employment_contracts_for_others'
 								| 'manage_task'
 								| 'manage_projects'
-								| 'manage_cost_centers';
+								| 'manage_cost_centers'
+								| 'manage_project_planning';
 							/** @description Teams the grant is limited to; `null` for the whole organization. */
 							targetTeamIds: string[] | null;
 						}[];
@@ -920,7 +960,6 @@ export interface operations {
 							| 'Drive'
 							| 'Ai'
 							| 'Datev'
-							| 'ExpensePayout'
 							| 'ProjectPlan'
 						)[];
 					};
@@ -1554,15 +1593,11 @@ export interface operations {
 							/** @description Last day the contract applies; `null` for an open-ended contract. */
 							activeUntilIso: string | null;
 							/**
-							 * Anstellungsverhältnis
 							 * @description Kind of employment.
 							 * @enum {string}
 							 */
 							employmentType: 'full_time' | 'part_time' | 'mini_job' | 'working_student';
-							/**
-							 * Vertragsnotizen
-							 * @description Internal notes, not visible to the employee.
-							 */
+							/** @description Internal notes, not visible to the employee. */
 							notes: string | null;
 							/** @description Pay; `null` when the contract records none. */
 							paySettings: {
@@ -1573,56 +1608,48 @@ export interface operations {
 								 * @enum {string}
 								 */
 								rateInterval: 'hourly' | 'monthly';
-								/**
-								 * Format: uuid
-								 * @description Wage type the pay is booked under.
-								 */
-								wageTypeId: string;
+								/** @description Wage type the pay is booked under; `null` when unset. */
+								wageTypeId: string | null;
 							} | null;
 							/** @description Vacation entitlement; `null` for none. */
 							absenceSettings: {
-								/**
-								 * Jährlicher Urlaubsanspruch in Tagen
-								 * @description Vacation days granted per year.
-								 */
+								/** @description Vacation days granted per year. */
 								yearlyQuotaWorkDays: number;
 								/** @description Vacation days granted for the vacation year named by `initialQuotaYear`. */
 								initialQuotaWorkDays: number | null;
-								/**
-								 * Jahr des anfänglichen Urlaubsanspruchs
-								 * @description Vacation year the initial quota counts towards; the contract start year when `null`.
-								 */
+								/** @description Vacation year the initial quota counts towards; the contract start year when `null`. */
 								initialQuotaYear: number | null;
 								/** @description Splits the yearly quota into parts granted every this many months. */
 								allocationIntervalMonths: number | null;
 								/** @description Months by which the quota grant is postponed. */
 								allocationDelayMonths: number | null;
-								/** @description Months into the next year after which untaken vacation expires. */
-								carryOverMonths: number | null;
+								/** @description What happens to untaken vacation in the next year: `no_carry_over` forfeits it, `after_months` carries it over until the end of month `months` (1 to 12) of the next year, `never` carries it over without expiry, year after year. */
+								carryOverExpiry:
+									| {
+											/** @constant */
+											type: 'no_carry_over';
+									  }
+									| {
+											/** @constant */
+											type: 'after_months';
+											months: number;
+									  }
+									| {
+											/** @constant */
+											type: 'never';
+									  };
 							} | null;
 							/** @description Target work time; `null` when the employee has none. */
 							workTimeSettings: {
-								/**
-								 * Anfängliche Überstunden
-								 * @description Overtime balance carried in when the contract starts.
-								 */
+								/** @description Overtime balance carried in when the contract starts. */
 								initialOvertimeMinutes: number | null;
-								/**
-								 * Anfängliche Gleitzeit
-								 * @description Flextime balance carried in when the contract starts.
-								 */
+								/** @description Flextime balance carried in when the contract starts. */
 								initialFlexOvertimeMinutes: number | null;
-								/**
-								 * Max. Zeitguthaben
-								 * @description Largest overtime balance allowed; `null` for no limit.
-								 */
+								/** @description Largest overtime balance allowed; `null` for no limit. */
 								maxTimeCreditMinutes: number | null;
-								/**
-								 * Max. Zeitschuld
-								 * @description Lowest overtime balance allowed, as a negative number; `null` for no limit.
-								 */
+								/** @description Lowest overtime balance allowed, as a negative number; `null` for no limit. */
 								maxTimeDebtMinutes: number | null;
-								/** @description Work-time models, each applying to a range of week or month numbers and optionally only to even or odd ISO week numbers. A model holds either `fixed` or `flexible`. */
+								/** @description Work-time models, each applying to a range of week or month numbers and optionally only to even or odd ISO week numbers. A model holds either `fixed` or `flexible`. `fixed.weekDayWorkMinutes` takes whole minutes, except a fractional value the contract already holds for the same model and weekday. `fixed.daysWithoutTarget` lists work days without a target, whose minutes are 0; it may be omitted only while the contract has none. `flexible.workDays` is `null` for every day and empty for none. */
 								models: {
 									/** @description First week or month number the model covers. */
 									startConstraint: number;
@@ -1637,12 +1664,14 @@ export interface operations {
 									weekParity: ('even' | 'odd') | null;
 									/** @description Fixed daily targets; `null` for a flexible model. */
 									fixed: {
-										/** @description Target minutes per weekday, Monday first. */
+										/** @description Target minutes per weekday, Monday first. Contracts carried over from a work time model can hold fractional minutes. */
 										weekDayWorkMinutes: number[];
+										/** @description Work days without a target; their `weekDayWorkMinutes` are 0. */
+										daysWithoutTarget: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[];
 									} | null;
 									/** @description Monthly targets; `null` for a fixed model. */
 									flexible: {
-										/** @description Days work is allowed on; `null` for every day. */
+										/** @description Days work is allowed on; `null` for every day, empty for none. */
 										workDays: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[] | null;
 										/** @description Minimum minutes per month. */
 										minMonthlyWorkMinutes: number | null;
@@ -1958,15 +1987,11 @@ export interface operations {
 					/** @description Last day the contract applies; `null` for an open-ended contract. */
 					activeUntilIso: string | null;
 					/**
-					 * Anstellungsverhältnis
 					 * @description Kind of employment.
 					 * @enum {string}
 					 */
 					employmentType: 'full_time' | 'part_time' | 'mini_job' | 'working_student';
-					/**
-					 * Vertragsnotizen
-					 * @description Internal notes, not visible to the employee.
-					 */
+					/** @description Internal notes, not visible to the employee. */
 					notes: string | null;
 					/** @description Pay; `null` when the contract records none. */
 					paySettings: {
@@ -1978,55 +2003,50 @@ export interface operations {
 						 */
 						rateInterval: 'hourly' | 'monthly';
 						/**
-						 * Format: uuid
-						 * @description Wage type the pay is booked under.
+						 * @description Optional wage type the pay is booked under; omit or set to `null` when unset.
+						 * @default null
 						 */
-						wageTypeId: string;
+						wageTypeId?: string | null;
 					} | null;
 					/** @description Vacation entitlement; `null` for none. */
 					absenceSettings: {
-						/**
-						 * Jährlicher Urlaubsanspruch in Tagen
-						 * @description Vacation days granted per year.
-						 */
+						/** @description Vacation days granted per year. */
 						yearlyQuotaWorkDays: number;
 						/** @description Vacation days granted for the vacation year named by `initialQuotaYear`. */
 						initialQuotaWorkDays: number | null;
-						/**
-						 * Jahr des anfänglichen Urlaubsanspruchs
-						 * @description Vacation year the initial quota counts towards; the contract start year when `null`.
-						 */
+						/** @description Vacation year the initial quota counts towards; the contract start year when `null`. */
 						initialQuotaYear: number | null;
 						/** @description Splits the yearly quota into parts granted every this many months. */
 						allocationIntervalMonths: number | null;
 						/** @description Months by which the quota grant is postponed. */
 						allocationDelayMonths: number | null;
-						/** @description Months into the next year after which untaken vacation expires. */
-						carryOverMonths: number | null;
+						/** @description What happens to untaken vacation in the next year: `no_carry_over` forfeits it, `after_months` carries it over until the end of month `months` (1 to 12) of the next year, `never` carries it over without expiry, year after year. */
+						carryOverExpiry:
+							| {
+									/** @constant */
+									type: 'no_carry_over';
+							  }
+							| {
+									/** @constant */
+									type: 'after_months';
+									months: number;
+							  }
+							| {
+									/** @constant */
+									type: 'never';
+							  };
 					} | null;
 					/** @description Target work time; `null` when the employee has none. */
 					workTimeSettings: {
-						/**
-						 * Anfängliche Überstunden
-						 * @description Overtime balance carried in when the contract starts.
-						 */
+						/** @description Overtime balance carried in when the contract starts. */
 						initialOvertimeMinutes: number | null;
-						/**
-						 * Anfängliche Gleitzeit
-						 * @description Flextime balance carried in when the contract starts.
-						 */
+						/** @description Flextime balance carried in when the contract starts. */
 						initialFlexOvertimeMinutes: number | null;
-						/**
-						 * Max. Zeitguthaben
-						 * @description Largest overtime balance allowed; `null` for no limit.
-						 */
+						/** @description Largest overtime balance allowed; `null` for no limit. */
 						maxTimeCreditMinutes: number | null;
-						/**
-						 * Max. Zeitschuld
-						 * @description Lowest overtime balance allowed, as a negative number; `null` for no limit.
-						 */
+						/** @description Lowest overtime balance allowed, as a negative number; `null` for no limit. */
 						maxTimeDebtMinutes: number | null;
-						/** @description Work-time models, each applying to a range of week or month numbers and optionally only to even or odd ISO week numbers. A model holds either `fixed` or `flexible`. */
+						/** @description Work-time models, each applying to a range of week or month numbers and optionally only to even or odd ISO week numbers. A model holds either `fixed` or `flexible`. `fixed.weekDayWorkMinutes` takes whole minutes, except a fractional value the contract already holds for the same model and weekday. `fixed.daysWithoutTarget` lists work days without a target, whose minutes are 0; it may be omitted only while the contract has none. `flexible.workDays` is `null` for every day and empty for none. */
 						models: (
 							| {
 									startConstraint: number;
@@ -2037,6 +2057,7 @@ export interface operations {
 									weekParity?: ('even' | 'odd') | null;
 									fixed: {
 										weekDayWorkMinutes: number[];
+										daysWithoutTarget?: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[];
 									};
 									flexible?: unknown;
 							  }
@@ -2049,11 +2070,8 @@ export interface operations {
 									weekParity?: ('even' | 'odd') | null;
 									fixed?: unknown;
 									flexible: {
-										/** Arbeitstage einschränken */
 										workDays: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[] | null;
-										/** Min. Monatsstunden */
 										minMonthlyWorkMinutes: number | null;
-										/** Max. Monatsstunden */
 										maxMonthlyWorkMinutes: number | null;
 									};
 							  }
@@ -2093,15 +2111,11 @@ export interface operations {
 						/** @description Last day the contract applies; `null` for an open-ended contract. */
 						activeUntilIso: string | null;
 						/**
-						 * Anstellungsverhältnis
 						 * @description Kind of employment.
 						 * @enum {string}
 						 */
 						employmentType: 'full_time' | 'part_time' | 'mini_job' | 'working_student';
-						/**
-						 * Vertragsnotizen
-						 * @description Internal notes, not visible to the employee.
-						 */
+						/** @description Internal notes, not visible to the employee. */
 						notes: string | null;
 						/** @description Pay; `null` when the contract records none. */
 						paySettings: {
@@ -2112,56 +2126,48 @@ export interface operations {
 							 * @enum {string}
 							 */
 							rateInterval: 'hourly' | 'monthly';
-							/**
-							 * Format: uuid
-							 * @description Wage type the pay is booked under.
-							 */
-							wageTypeId: string;
+							/** @description Wage type the pay is booked under; `null` when unset. */
+							wageTypeId: string | null;
 						} | null;
 						/** @description Vacation entitlement; `null` for none. */
 						absenceSettings: {
-							/**
-							 * Jährlicher Urlaubsanspruch in Tagen
-							 * @description Vacation days granted per year.
-							 */
+							/** @description Vacation days granted per year. */
 							yearlyQuotaWorkDays: number;
 							/** @description Vacation days granted for the vacation year named by `initialQuotaYear`. */
 							initialQuotaWorkDays: number | null;
-							/**
-							 * Jahr des anfänglichen Urlaubsanspruchs
-							 * @description Vacation year the initial quota counts towards; the contract start year when `null`.
-							 */
+							/** @description Vacation year the initial quota counts towards; the contract start year when `null`. */
 							initialQuotaYear: number | null;
 							/** @description Splits the yearly quota into parts granted every this many months. */
 							allocationIntervalMonths: number | null;
 							/** @description Months by which the quota grant is postponed. */
 							allocationDelayMonths: number | null;
-							/** @description Months into the next year after which untaken vacation expires. */
-							carryOverMonths: number | null;
+							/** @description What happens to untaken vacation in the next year: `no_carry_over` forfeits it, `after_months` carries it over until the end of month `months` (1 to 12) of the next year, `never` carries it over without expiry, year after year. */
+							carryOverExpiry:
+								| {
+										/** @constant */
+										type: 'no_carry_over';
+								  }
+								| {
+										/** @constant */
+										type: 'after_months';
+										months: number;
+								  }
+								| {
+										/** @constant */
+										type: 'never';
+								  };
 						} | null;
 						/** @description Target work time; `null` when the employee has none. */
 						workTimeSettings: {
-							/**
-							 * Anfängliche Überstunden
-							 * @description Overtime balance carried in when the contract starts.
-							 */
+							/** @description Overtime balance carried in when the contract starts. */
 							initialOvertimeMinutes: number | null;
-							/**
-							 * Anfängliche Gleitzeit
-							 * @description Flextime balance carried in when the contract starts.
-							 */
+							/** @description Flextime balance carried in when the contract starts. */
 							initialFlexOvertimeMinutes: number | null;
-							/**
-							 * Max. Zeitguthaben
-							 * @description Largest overtime balance allowed; `null` for no limit.
-							 */
+							/** @description Largest overtime balance allowed; `null` for no limit. */
 							maxTimeCreditMinutes: number | null;
-							/**
-							 * Max. Zeitschuld
-							 * @description Lowest overtime balance allowed, as a negative number; `null` for no limit.
-							 */
+							/** @description Lowest overtime balance allowed, as a negative number; `null` for no limit. */
 							maxTimeDebtMinutes: number | null;
-							/** @description Work-time models, each applying to a range of week or month numbers and optionally only to even or odd ISO week numbers. A model holds either `fixed` or `flexible`. */
+							/** @description Work-time models, each applying to a range of week or month numbers and optionally only to even or odd ISO week numbers. A model holds either `fixed` or `flexible`. `fixed.weekDayWorkMinutes` takes whole minutes, except a fractional value the contract already holds for the same model and weekday. `fixed.daysWithoutTarget` lists work days without a target, whose minutes are 0; it may be omitted only while the contract has none. `flexible.workDays` is `null` for every day and empty for none. */
 							models: {
 								/** @description First week or month number the model covers. */
 								startConstraint: number;
@@ -2176,12 +2182,14 @@ export interface operations {
 								weekParity: ('even' | 'odd') | null;
 								/** @description Fixed daily targets; `null` for a flexible model. */
 								fixed: {
-									/** @description Target minutes per weekday, Monday first. */
+									/** @description Target minutes per weekday, Monday first. Contracts carried over from a work time model can hold fractional minutes. */
 									weekDayWorkMinutes: number[];
+									/** @description Work days without a target; their `weekDayWorkMinutes` are 0. */
+									daysWithoutTarget: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[];
 								} | null;
 								/** @description Monthly targets; `null` for a fixed model. */
 								flexible: {
-									/** @description Days work is allowed on; `null` for every day. */
+									/** @description Days work is allowed on; `null` for every day, empty for none. */
 									workDays: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[] | null;
 									/** @description Minimum minutes per month. */
 									minMonthlyWorkMinutes: number | null;
@@ -2510,15 +2518,11 @@ export interface operations {
 						/** @description Last day the contract applies; `null` for an open-ended contract. */
 						activeUntilIso: string | null;
 						/**
-						 * Anstellungsverhältnis
 						 * @description Kind of employment.
 						 * @enum {string}
 						 */
 						employmentType: 'full_time' | 'part_time' | 'mini_job' | 'working_student';
-						/**
-						 * Vertragsnotizen
-						 * @description Internal notes, not visible to the employee.
-						 */
+						/** @description Internal notes, not visible to the employee. */
 						notes: string | null;
 						/** @description Pay; `null` when the contract records none. */
 						paySettings: {
@@ -2529,56 +2533,48 @@ export interface operations {
 							 * @enum {string}
 							 */
 							rateInterval: 'hourly' | 'monthly';
-							/**
-							 * Format: uuid
-							 * @description Wage type the pay is booked under.
-							 */
-							wageTypeId: string;
+							/** @description Wage type the pay is booked under; `null` when unset. */
+							wageTypeId: string | null;
 						} | null;
 						/** @description Vacation entitlement; `null` for none. */
 						absenceSettings: {
-							/**
-							 * Jährlicher Urlaubsanspruch in Tagen
-							 * @description Vacation days granted per year.
-							 */
+							/** @description Vacation days granted per year. */
 							yearlyQuotaWorkDays: number;
 							/** @description Vacation days granted for the vacation year named by `initialQuotaYear`. */
 							initialQuotaWorkDays: number | null;
-							/**
-							 * Jahr des anfänglichen Urlaubsanspruchs
-							 * @description Vacation year the initial quota counts towards; the contract start year when `null`.
-							 */
+							/** @description Vacation year the initial quota counts towards; the contract start year when `null`. */
 							initialQuotaYear: number | null;
 							/** @description Splits the yearly quota into parts granted every this many months. */
 							allocationIntervalMonths: number | null;
 							/** @description Months by which the quota grant is postponed. */
 							allocationDelayMonths: number | null;
-							/** @description Months into the next year after which untaken vacation expires. */
-							carryOverMonths: number | null;
+							/** @description What happens to untaken vacation in the next year: `no_carry_over` forfeits it, `after_months` carries it over until the end of month `months` (1 to 12) of the next year, `never` carries it over without expiry, year after year. */
+							carryOverExpiry:
+								| {
+										/** @constant */
+										type: 'no_carry_over';
+								  }
+								| {
+										/** @constant */
+										type: 'after_months';
+										months: number;
+								  }
+								| {
+										/** @constant */
+										type: 'never';
+								  };
 						} | null;
 						/** @description Target work time; `null` when the employee has none. */
 						workTimeSettings: {
-							/**
-							 * Anfängliche Überstunden
-							 * @description Overtime balance carried in when the contract starts.
-							 */
+							/** @description Overtime balance carried in when the contract starts. */
 							initialOvertimeMinutes: number | null;
-							/**
-							 * Anfängliche Gleitzeit
-							 * @description Flextime balance carried in when the contract starts.
-							 */
+							/** @description Flextime balance carried in when the contract starts. */
 							initialFlexOvertimeMinutes: number | null;
-							/**
-							 * Max. Zeitguthaben
-							 * @description Largest overtime balance allowed; `null` for no limit.
-							 */
+							/** @description Largest overtime balance allowed; `null` for no limit. */
 							maxTimeCreditMinutes: number | null;
-							/**
-							 * Max. Zeitschuld
-							 * @description Lowest overtime balance allowed, as a negative number; `null` for no limit.
-							 */
+							/** @description Lowest overtime balance allowed, as a negative number; `null` for no limit. */
 							maxTimeDebtMinutes: number | null;
-							/** @description Work-time models, each applying to a range of week or month numbers and optionally only to even or odd ISO week numbers. A model holds either `fixed` or `flexible`. */
+							/** @description Work-time models, each applying to a range of week or month numbers and optionally only to even or odd ISO week numbers. A model holds either `fixed` or `flexible`. `fixed.weekDayWorkMinutes` takes whole minutes, except a fractional value the contract already holds for the same model and weekday. `fixed.daysWithoutTarget` lists work days without a target, whose minutes are 0; it may be omitted only while the contract has none. `flexible.workDays` is `null` for every day and empty for none. */
 							models: {
 								/** @description First week or month number the model covers. */
 								startConstraint: number;
@@ -2593,12 +2589,14 @@ export interface operations {
 								weekParity: ('even' | 'odd') | null;
 								/** @description Fixed daily targets; `null` for a flexible model. */
 								fixed: {
-									/** @description Target minutes per weekday, Monday first. */
+									/** @description Target minutes per weekday, Monday first. Contracts carried over from a work time model can hold fractional minutes. */
 									weekDayWorkMinutes: number[];
+									/** @description Work days without a target; their `weekDayWorkMinutes` are 0. */
+									daysWithoutTarget: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[];
 								} | null;
 								/** @description Monthly targets; `null` for a fixed model. */
 								flexible: {
-									/** @description Days work is allowed on; `null` for every day. */
+									/** @description Days work is allowed on; `null` for every day, empty for none. */
 									workDays: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[] | null;
 									/** @description Minimum minutes per month. */
 									minMonthlyWorkMinutes: number | null;
@@ -2908,15 +2906,11 @@ export interface operations {
 					/** @description Last day the contract applies; `null` for an open-ended contract. */
 					activeUntilIso: string | null;
 					/**
-					 * Anstellungsverhältnis
 					 * @description Kind of employment.
 					 * @enum {string}
 					 */
 					employmentType: 'full_time' | 'part_time' | 'mini_job' | 'working_student';
-					/**
-					 * Vertragsnotizen
-					 * @description Internal notes, not visible to the employee.
-					 */
+					/** @description Internal notes, not visible to the employee. */
 					notes: string | null;
 					/** @description Pay; `null` when the contract records none. */
 					paySettings: {
@@ -2928,55 +2922,50 @@ export interface operations {
 						 */
 						rateInterval: 'hourly' | 'monthly';
 						/**
-						 * Format: uuid
-						 * @description Wage type the pay is booked under.
+						 * @description Optional wage type the pay is booked under; omit or set to `null` when unset.
+						 * @default null
 						 */
-						wageTypeId: string;
+						wageTypeId?: string | null;
 					} | null;
 					/** @description Vacation entitlement; `null` for none. */
 					absenceSettings: {
-						/**
-						 * Jährlicher Urlaubsanspruch in Tagen
-						 * @description Vacation days granted per year.
-						 */
+						/** @description Vacation days granted per year. */
 						yearlyQuotaWorkDays: number;
 						/** @description Vacation days granted for the vacation year named by `initialQuotaYear`. */
 						initialQuotaWorkDays: number | null;
-						/**
-						 * Jahr des anfänglichen Urlaubsanspruchs
-						 * @description Vacation year the initial quota counts towards; the contract start year when `null`.
-						 */
+						/** @description Vacation year the initial quota counts towards; the contract start year when `null`. */
 						initialQuotaYear: number | null;
 						/** @description Splits the yearly quota into parts granted every this many months. */
 						allocationIntervalMonths: number | null;
 						/** @description Months by which the quota grant is postponed. */
 						allocationDelayMonths: number | null;
-						/** @description Months into the next year after which untaken vacation expires. */
-						carryOverMonths: number | null;
+						/** @description What happens to untaken vacation in the next year: `no_carry_over` forfeits it, `after_months` carries it over until the end of month `months` (1 to 12) of the next year, `never` carries it over without expiry, year after year. */
+						carryOverExpiry:
+							| {
+									/** @constant */
+									type: 'no_carry_over';
+							  }
+							| {
+									/** @constant */
+									type: 'after_months';
+									months: number;
+							  }
+							| {
+									/** @constant */
+									type: 'never';
+							  };
 					} | null;
 					/** @description Target work time; `null` when the employee has none. */
 					workTimeSettings: {
-						/**
-						 * Anfängliche Überstunden
-						 * @description Overtime balance carried in when the contract starts.
-						 */
+						/** @description Overtime balance carried in when the contract starts. */
 						initialOvertimeMinutes: number | null;
-						/**
-						 * Anfängliche Gleitzeit
-						 * @description Flextime balance carried in when the contract starts.
-						 */
+						/** @description Flextime balance carried in when the contract starts. */
 						initialFlexOvertimeMinutes: number | null;
-						/**
-						 * Max. Zeitguthaben
-						 * @description Largest overtime balance allowed; `null` for no limit.
-						 */
+						/** @description Largest overtime balance allowed; `null` for no limit. */
 						maxTimeCreditMinutes: number | null;
-						/**
-						 * Max. Zeitschuld
-						 * @description Lowest overtime balance allowed, as a negative number; `null` for no limit.
-						 */
+						/** @description Lowest overtime balance allowed, as a negative number; `null` for no limit. */
 						maxTimeDebtMinutes: number | null;
-						/** @description Work-time models, each applying to a range of week or month numbers and optionally only to even or odd ISO week numbers. A model holds either `fixed` or `flexible`. */
+						/** @description Work-time models, each applying to a range of week or month numbers and optionally only to even or odd ISO week numbers. A model holds either `fixed` or `flexible`. `fixed.weekDayWorkMinutes` takes whole minutes, except a fractional value the contract already holds for the same model and weekday. `fixed.daysWithoutTarget` lists work days without a target, whose minutes are 0; it may be omitted only while the contract has none. `flexible.workDays` is `null` for every day and empty for none. */
 						models: (
 							| {
 									startConstraint: number;
@@ -2987,6 +2976,7 @@ export interface operations {
 									weekParity?: ('even' | 'odd') | null;
 									fixed: {
 										weekDayWorkMinutes: number[];
+										daysWithoutTarget?: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[];
 									};
 									flexible?: unknown;
 							  }
@@ -2999,11 +2989,8 @@ export interface operations {
 									weekParity?: ('even' | 'odd') | null;
 									fixed?: unknown;
 									flexible: {
-										/** Arbeitstage einschränken */
 										workDays: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[] | null;
-										/** Min. Monatsstunden */
 										minMonthlyWorkMinutes: number | null;
-										/** Max. Monatsstunden */
 										maxMonthlyWorkMinutes: number | null;
 									};
 							  }
@@ -3041,15 +3028,11 @@ export interface operations {
 						/** @description Last day the contract applies; `null` for an open-ended contract. */
 						activeUntilIso: string | null;
 						/**
-						 * Anstellungsverhältnis
 						 * @description Kind of employment.
 						 * @enum {string}
 						 */
 						employmentType: 'full_time' | 'part_time' | 'mini_job' | 'working_student';
-						/**
-						 * Vertragsnotizen
-						 * @description Internal notes, not visible to the employee.
-						 */
+						/** @description Internal notes, not visible to the employee. */
 						notes: string | null;
 						/** @description Pay; `null` when the contract records none. */
 						paySettings: {
@@ -3060,56 +3043,48 @@ export interface operations {
 							 * @enum {string}
 							 */
 							rateInterval: 'hourly' | 'monthly';
-							/**
-							 * Format: uuid
-							 * @description Wage type the pay is booked under.
-							 */
-							wageTypeId: string;
+							/** @description Wage type the pay is booked under; `null` when unset. */
+							wageTypeId: string | null;
 						} | null;
 						/** @description Vacation entitlement; `null` for none. */
 						absenceSettings: {
-							/**
-							 * Jährlicher Urlaubsanspruch in Tagen
-							 * @description Vacation days granted per year.
-							 */
+							/** @description Vacation days granted per year. */
 							yearlyQuotaWorkDays: number;
 							/** @description Vacation days granted for the vacation year named by `initialQuotaYear`. */
 							initialQuotaWorkDays: number | null;
-							/**
-							 * Jahr des anfänglichen Urlaubsanspruchs
-							 * @description Vacation year the initial quota counts towards; the contract start year when `null`.
-							 */
+							/** @description Vacation year the initial quota counts towards; the contract start year when `null`. */
 							initialQuotaYear: number | null;
 							/** @description Splits the yearly quota into parts granted every this many months. */
 							allocationIntervalMonths: number | null;
 							/** @description Months by which the quota grant is postponed. */
 							allocationDelayMonths: number | null;
-							/** @description Months into the next year after which untaken vacation expires. */
-							carryOverMonths: number | null;
+							/** @description What happens to untaken vacation in the next year: `no_carry_over` forfeits it, `after_months` carries it over until the end of month `months` (1 to 12) of the next year, `never` carries it over without expiry, year after year. */
+							carryOverExpiry:
+								| {
+										/** @constant */
+										type: 'no_carry_over';
+								  }
+								| {
+										/** @constant */
+										type: 'after_months';
+										months: number;
+								  }
+								| {
+										/** @constant */
+										type: 'never';
+								  };
 						} | null;
 						/** @description Target work time; `null` when the employee has none. */
 						workTimeSettings: {
-							/**
-							 * Anfängliche Überstunden
-							 * @description Overtime balance carried in when the contract starts.
-							 */
+							/** @description Overtime balance carried in when the contract starts. */
 							initialOvertimeMinutes: number | null;
-							/**
-							 * Anfängliche Gleitzeit
-							 * @description Flextime balance carried in when the contract starts.
-							 */
+							/** @description Flextime balance carried in when the contract starts. */
 							initialFlexOvertimeMinutes: number | null;
-							/**
-							 * Max. Zeitguthaben
-							 * @description Largest overtime balance allowed; `null` for no limit.
-							 */
+							/** @description Largest overtime balance allowed; `null` for no limit. */
 							maxTimeCreditMinutes: number | null;
-							/**
-							 * Max. Zeitschuld
-							 * @description Lowest overtime balance allowed, as a negative number; `null` for no limit.
-							 */
+							/** @description Lowest overtime balance allowed, as a negative number; `null` for no limit. */
 							maxTimeDebtMinutes: number | null;
-							/** @description Work-time models, each applying to a range of week or month numbers and optionally only to even or odd ISO week numbers. A model holds either `fixed` or `flexible`. */
+							/** @description Work-time models, each applying to a range of week or month numbers and optionally only to even or odd ISO week numbers. A model holds either `fixed` or `flexible`. `fixed.weekDayWorkMinutes` takes whole minutes, except a fractional value the contract already holds for the same model and weekday. `fixed.daysWithoutTarget` lists work days without a target, whose minutes are 0; it may be omitted only while the contract has none. `flexible.workDays` is `null` for every day and empty for none. */
 							models: {
 								/** @description First week or month number the model covers. */
 								startConstraint: number;
@@ -3124,12 +3099,14 @@ export interface operations {
 								weekParity: ('even' | 'odd') | null;
 								/** @description Fixed daily targets; `null` for a flexible model. */
 								fixed: {
-									/** @description Target minutes per weekday, Monday first. */
+									/** @description Target minutes per weekday, Monday first. Contracts carried over from a work time model can hold fractional minutes. */
 									weekDayWorkMinutes: number[];
+									/** @description Work days without a target; their `weekDayWorkMinutes` are 0. */
+									daysWithoutTarget: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[];
 								} | null;
 								/** @description Monthly targets; `null` for a fixed model. */
 								flexible: {
-									/** @description Days work is allowed on; `null` for every day. */
+									/** @description Days work is allowed on; `null` for every day, empty for none. */
 									workDays: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[] | null;
 									/** @description Minimum minutes per month. */
 									minMonthlyWorkMinutes: number | null;
@@ -5211,6 +5188,7 @@ export interface operations {
 								| 'rest_api'
 								| 'goodday'
 								| 'terminal'
+								| 'mcp'
 								| 'manual'
 								| 'automatic_break_correction'
 								| 'automatic_shift_assignment_sync'
@@ -5610,6 +5588,7 @@ export interface operations {
 							| 'rest_api'
 							| 'goodday'
 							| 'terminal'
+							| 'mcp'
 							| 'manual'
 							| 'automatic_break_correction'
 							| 'automatic_shift_assignment_sync'
@@ -5966,6 +5945,7 @@ export interface operations {
 							| 'rest_api'
 							| 'goodday'
 							| 'terminal'
+							| 'mcp'
 							| 'manual'
 							| 'automatic_break_correction'
 							| 'automatic_shift_assignment_sync'
@@ -7229,10 +7209,10 @@ export interface operations {
 						items: {
 							/**
 							 * Format: uuid
-							 * @description Ressource id.
+							 * @description Resource id.
 							 */
 							id: string;
-							/** @description Name of the Ressource, such as a desk or room. */
+							/** @description Name of the resource, such as a desk or room. */
 							name: string;
 							/** @description Free-text description. */
 							description: string | null;
@@ -7240,26 +7220,26 @@ export interface operations {
 							maxEmployees: number | null;
 							/** @description IANA time zone its booking days are laid out in. */
 							timeZone: string;
-							/** @description Standort the Ressource belongs to, as a snapshot at request time. */
+							/** @description Resource location the resource belongs to, as a snapshot at request time. */
 							location: {
 								/**
 								 * Format: uuid
-								 * @description Standort id.
+								 * @description Resource location id.
 								 */
 								id: string;
-								/** @description Standort name. */
+								/** @description Resource location name. */
 								name: string;
 							};
-							/** @description When the Ressource was archived. */
+							/** @description When the resource was archived. */
 							archivedAt: string | null;
 							/**
 							 * Format: date-time
-							 * @description When the Ressource was created.
+							 * @description When the resource was created.
 							 */
 							createdAt: string;
 							/**
 							 * Format: date-time
-							 * @description When the Ressource itself last changed.
+							 * @description When the resource itself last changed.
 							 */
 							updatedAt: string;
 						}[];
@@ -7559,10 +7539,10 @@ export interface operations {
 					'application/json': {
 						/**
 						 * Format: uuid
-						 * @description Ressource id.
+						 * @description Resource id.
 						 */
 						id: string;
-						/** @description Name of the Ressource, such as a desk or room. */
+						/** @description Name of the resource, such as a desk or room. */
 						name: string;
 						/** @description Free-text description. */
 						description: string | null;
@@ -7570,26 +7550,26 @@ export interface operations {
 						maxEmployees: number | null;
 						/** @description IANA time zone its booking days are laid out in. */
 						timeZone: string;
-						/** @description Standort the Ressource belongs to, as a snapshot at request time. */
+						/** @description Resource location the resource belongs to, as a snapshot at request time. */
 						location: {
 							/**
 							 * Format: uuid
-							 * @description Standort id.
+							 * @description Resource location id.
 							 */
 							id: string;
-							/** @description Standort name. */
+							/** @description Resource location name. */
 							name: string;
 						};
-						/** @description When the Ressource was archived. */
+						/** @description When the resource was archived. */
 						archivedAt: string | null;
 						/**
 						 * Format: date-time
-						 * @description When the Ressource was created.
+						 * @description When the resource was created.
 						 */
 						createdAt: string;
 						/**
 						 * Format: date-time
-						 * @description When the Ressource itself last changed.
+						 * @description When the resource itself last changed.
 						 */
 						updatedAt: string;
 					};
@@ -7909,14 +7889,14 @@ export interface operations {
 							endDate: string;
 							/** @description Free-text note on the booking. */
 							note: string | null;
-							/** @description The booked Ressource; its `timeZone` places the booking on a local day. */
+							/** @description The booked resource; its `timeZone` places the booking on a local day. */
 							resource: {
 								/**
 								 * Format: uuid
-								 * @description Ressource id.
+								 * @description Resource id.
 								 */
 								id: string;
-								/** @description Ressource name. */
+								/** @description Resource name. */
 								name: string;
 							};
 							/** @description Employees assigned to the booking; empty while nobody is assigned. */
@@ -8248,14 +8228,14 @@ export interface operations {
 						endDate: string;
 						/** @description Free-text note on the booking. */
 						note: string | null;
-						/** @description The booked Ressource; its `timeZone` places the booking on a local day. */
+						/** @description The booked resource; its `timeZone` places the booking on a local day. */
 						resource: {
 							/**
 							 * Format: uuid
-							 * @description Ressource id.
+							 * @description Resource id.
 							 */
 							id: string;
-							/** @description Ressource name. */
+							/** @description Resource name. */
 							name: string;
 						};
 						/** @description Employees assigned to the booking; empty while nobody is assigned. */
@@ -8273,6 +8253,682 @@ export interface operations {
 						/**
 						 * Format: date-time
 						 * @description When the booking or its assignments last changed.
+						 */
+						updatedAt: string;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+						/** @description One entry per rejected input value. */
+						errors: ({
+							/** @description What is wrong with the value. */
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	listProjectAssignments: {
+		parameters: {
+			query?: {
+				limit?: number;
+				offset?: number;
+				from?: string;
+				to?: string;
+				updatedSince?: string;
+				projectId?: string;
+				userId?: string;
+				sort?: 'startDate' | '-startDate' | 'updatedAt' | '-updatedAt';
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A page of project assignments. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						/** @description The items on this page. */
+						items: {
+							/**
+							 * Format: uuid
+							 * @description Project assignment id.
+							 */
+							id: string;
+							/** @description First planned day, as `YYYY-MM-DD`. */
+							startDate: string;
+							/** @description Last planned day, as `YYYY-MM-DD`. */
+							endDate: string;
+							/** @description Free-text note on the project assignment. */
+							note: string | null;
+							/** @description The project the assignment is on. */
+							project: {
+								/**
+								 * Format: uuid
+								 * @description Project id.
+								 */
+								id: string;
+								/** @description Project name. */
+								name: string;
+							};
+							/** @description The planned employee; `null` for an open project assignment nobody is planned on yet. */
+							employee: {
+								/**
+								 * Format: uuid
+								 * @description Employee id.
+								 */
+								userId: string;
+								/** @description Name shown in the app. */
+								displayName: string;
+								/** @description First and last name. */
+								fullName: string;
+							} | null;
+							/** @description The assignment series the project assignment was generated from; `null` for a single project assignment. */
+							seriesId: string | null;
+							/**
+							 * Format: date-time
+							 * @description When the project assignment last changed.
+							 */
+							updatedAt: string;
+						}[];
+						/** @description Whether another page follows at `offset + limit`. */
+						hasMore: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+						/** @description One entry per rejected input value. */
+						errors: ({
+							/** @description What is wrong with the value. */
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	getProjectAssignment: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description The project assignment. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						/**
+						 * Format: uuid
+						 * @description Project assignment id.
+						 */
+						id: string;
+						/** @description First planned day, as `YYYY-MM-DD`. */
+						startDate: string;
+						/** @description Last planned day, as `YYYY-MM-DD`. */
+						endDate: string;
+						/** @description Free-text note on the project assignment. */
+						note: string | null;
+						/** @description The project the assignment is on. */
+						project: {
+							/**
+							 * Format: uuid
+							 * @description Project id.
+							 */
+							id: string;
+							/** @description Project name. */
+							name: string;
+						};
+						/** @description The planned employee; `null` for an open project assignment nobody is planned on yet. */
+						employee: {
+							/**
+							 * Format: uuid
+							 * @description Employee id.
+							 */
+							userId: string;
+							/** @description Name shown in the app. */
+							displayName: string;
+							/** @description First and last name. */
+							fullName: string;
+						} | null;
+						/** @description The assignment series the project assignment was generated from; `null` for a single project assignment. */
+						seriesId: string | null;
+						/**
+						 * Format: date-time
+						 * @description When the project assignment last changed.
 						 */
 						updatedAt: string;
 					};
@@ -9906,7 +10562,7 @@ export interface operations {
 							userId: string;
 							/** @description Reported day, as `YYYY-MM-DD`. */
 							date: string;
-							/** @description Worked minutes across all work types. */
+							/** @description Work time: worked minutes of the work types that count as work time (`countsAsWork` in `GET /options/work-types`). The per-type minutes below include every type. */
 							totalWorkMinutes: number;
 							/** @description Minutes of `worktime` entries. */
 							regularWorkMinutes: number;
@@ -10920,11 +11576,8 @@ export interface operations {
 							 * @enum {string}
 							 */
 							rateInterval: 'hourly' | 'monthly';
-							/**
-							 * Format: uuid
-							 * @description Wage type the rate is paid under.
-							 */
-							wageTypeId: string;
+							/** @description Wage type the rate is paid under; `null` when unset. */
+							wageTypeId: string | null;
 						}[];
 						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
@@ -12893,7 +13546,7 @@ export interface operations {
 							 * @description Tag id.
 							 */
 							id: string;
-							/** @description Name of the tag (Tätigkeit). */
+							/** @description Name of the tag. */
 							name: string;
 							/** @description Hex color such as `#3b82f6`. */
 							color: string;
@@ -13194,7 +13847,7 @@ export interface operations {
 		requestBody: {
 			content: {
 				'application/json': {
-					/** @description Name of the tag (Tätigkeit). */
+					/** @description Name of the tag. */
 					name: string;
 					/** @description Hex color such as `#3b82f6`. */
 					color: string;
@@ -13230,7 +13883,7 @@ export interface operations {
 						 * @description Tag id.
 						 */
 						id: string;
-						/** @description Name of the tag (Tätigkeit). */
+						/** @description Name of the tag. */
 						name: string;
 						/** @description Hex color such as `#3b82f6`. */
 						color: string;
@@ -13549,7 +14202,7 @@ export interface operations {
 						 * @description Tag id.
 						 */
 						id: string;
-						/** @description Name of the tag (Tätigkeit). */
+						/** @description Name of the tag. */
 						name: string;
 						/** @description Hex color such as `#3b82f6`. */
 						color: string;
@@ -17580,6 +18233,8 @@ export interface operations {
 							value: string;
 							/** @description Name to show in the dropdown. */
 							label: string;
+							/** @description Whether time of this type counts as work time, so towards `totalWorkMinutes`. */
+							countsAsWork: boolean;
 						}[];
 						/** @description Whether another page follows at `offset + limit`. */
 						hasMore: boolean;
