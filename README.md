@@ -30,16 +30,19 @@ community nodes documentation and install the package `@falcondev-it/n8n-nodes-t
 
 ## Operations
 
-- Absence: Get, Get Absent Employees, Get Many
+- Absence: Get, Get Absent Employees, Get Many, Get Vacation Balances
 - Attendance: Get Many
 - Cost Center: Create, Get, Get Many
 - Daily Report: Get Many
 - Employee: Get, Get Many
 - Employee Field: Get Many
+- Employment Contract: Create, Delete, Get, Get Many, Replace
 - Form Submission: Get, Get Many
+- Message: Send Email, Send Push Notification
 - Overtime Payout: Get Many
 - Pay Rate: Get Many
 - Project: Create, Get, Get Many
+- Project Assignment: Get, Get Many
 - Resource: Get, Get Many
 - Resource Booking: Get, Get Many
 - Resource Entry: Get Many
@@ -64,10 +67,16 @@ connection test calls `GET /connection` and needs no permission beyond a valid k
 List operations support `Return All`, pagination, their resource-specific filters, and a
 `Sort` collection. Task, time entry, and daily report operations return at most 10 fields by
 default; turn off `Simplify` to get the full response. Deleting a time entry archives it in
-Teamanda and outputs `{ "deleted": true }`. Creating time entries, tasks, projects, tags,
+Teamanda and outputs `{ "deleted": true }`; deleting an employment contract outputs the same. Creating time entries, tasks, projects, tags,
 and cost centers (unless a number is given) is not idempotent, so do not automatically
 retry it after an ambiguous timeout. Project members, locations, and custom fields cannot be
 set through the API.
+
+Replacing an employment contract sends every field, so settings left out of Additional Fields
+are removed. Absence and work time settings are entered as JSON in the API's shape. Messages
+carry an idempotency key, by default the execution ID and item index, so a retried request does
+not reach a recipient twice. Teamanda sends at most 2,000 messages per organization in 24 hours,
+and the API key needs the Send Messages permission.
 
 Date and time values without an offset are read in the workflow's timezone and sent to the
 API as UTC.
