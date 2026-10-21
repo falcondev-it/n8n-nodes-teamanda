@@ -6,14 +6,11 @@ import {
 	filterProperties,
 	resourceProperties,
 	sortProperty,
-	multiDropdown,
 	updatedSinceFilter,
 	windowFilters,
 } from '../shared/properties';
 
-const showOnlyForVacationBalances = {
-	displayOptions: { show: { operation: ['getVacationBalances'], resource: ['absence'] } },
-};
+const showOnlyForVacationBalances = { operation: ['getVacationBalances'], resource: ['absence'] };
 
 const statusOptions = toOptions<NonNullable<Query<'listAbsenceRequests'>['status']>[number]>({
 	approved: 'Approved',
@@ -68,17 +65,15 @@ export const absenceDescription: INodeProperties[] = [
 		required: true,
 		default: '',
 		description: 'Day the balances are calculated for',
-		...showOnlyForVacationBalances,
+		displayOptions: { show: showOnlyForVacationBalances },
 		routing: queryRouting<'listVacationBalances'>('date', CALENDAR_DATE),
 	},
 	{
-		displayName: 'Employee Names or IDs',
+		...employeesFilter<'listVacationBalances'>(),
 		name: 'balanceUserIds',
-		...multiDropdown('getEmployees'),
 		description:
 			'Only these employees. Defaults to all active employees the API key may see. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
-		...showOnlyForVacationBalances,
-		routing: queryRouting<'listVacationBalances'>('userId'),
+		displayOptions: { show: showOnlyForVacationBalances },
 	},
 	...windowFilters<'listAbsentUsers'>('date', {
 		required: true,

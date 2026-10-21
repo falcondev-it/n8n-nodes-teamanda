@@ -10,8 +10,9 @@
 [Teamanda](https://teamanda.app/) is HR software for small and mid-sized businesses.
 
 This n8n community node lets workflows read Teamanda employee, absence, attendance, payroll,
-form, and scheduling data and manage time entries, tasks, projects, tags, and cost centers
-through the Teamanda REST API.
+form, and scheduling data, manage time entries, tasks, projects, tags, cost centers, and
+employment contracts, and send emails and push notifications to employees through the Teamanda
+REST API.
 
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/sustainable-use-license/) workflow automation platform.
 
@@ -65,17 +66,19 @@ connection test calls `GET /connection` and needs no permission beyond a valid k
 ## Usage
 
 List operations support `Return All`, pagination, their resource-specific filters, and a
-`Sort` collection. Task, time entry, and daily report operations return at most 10 fields by
-default; turn off `Simplify` to get the full response. Deleting a time entry archives it in
-Teamanda and outputs `{ "deleted": true }`; deleting an employment contract outputs the same. Creating time entries, tasks, projects, tags,
-and cost centers (unless a number is given) is not idempotent, so do not automatically
-retry it after an ambiguous timeout. Project members, locations, and custom fields cannot be
+`Sort` collection. Task, time entry, daily report, and employment contract operations return
+at most 10 fields by default; turn off `Simplify` to get the full response. Deleting a time
+entry archives it in Teamanda. Deleting a time entry or an employment contract outputs
+`{ "deleted": true }`. Creating time entries, tasks, projects, tags, and cost centers (unless
+a number is given) is not idempotent, so do not automatically retry it after an ambiguous
+timeout. Project members, locations, and custom fields cannot be
 set through the API.
 
 Replacing an employment contract sends every field, so settings left out of Additional Fields
 are removed. Absence and work time settings are entered as JSON in the API's shape. Messages
-carry an idempotency key, by default the execution ID and item index, so a retried request does
-not reach a recipient twice. Teamanda sends at most 2,000 messages per organization in 24 hours,
+carry an idempotency key, by default built from the execution, node, run, and item, so
+`Retry On Fail` does not reach a recipient twice. Re-running a whole execution creates new
+keys; build the key from your data to cover that case. Teamanda sends at most 2,000 messages per organization in 24 hours,
 and the API key needs the Send Messages permission.
 
 Date and time values without an offset are read in the workflow's timezone and sent to the

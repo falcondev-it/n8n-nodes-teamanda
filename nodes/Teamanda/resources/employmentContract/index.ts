@@ -1,13 +1,20 @@
 import {
 	jsonParse,
+	NodeOperationError,
 	type IDataObject,
 	type IExecuteSingleFunctions,
 	type INodeProperties,
 } from 'n8n-workflow';
 import { queryRouting, toCalendarDate, toOptions, type Body } from '../../api';
-import { filterProperties, locator, resourceProperties } from '../shared/properties';
+import {
+	deleteOperation,
+	filterProperties,
+	locator,
+	resourceProperties,
+} from '../shared/properties';
 
 type ContractFields = Body<'updateEmploymentContract'>;
+type RateInterval = NonNullable<ContractFields['paySettings']>['rateInterval'];
 
 const employmentTypeOptions = toOptions<ContractFields['employmentType']>({
 	full_time: 'Full Time',
@@ -16,12 +23,12 @@ const employmentTypeOptions = toOptions<ContractFields['employmentType']>({
 	working_student: 'Working Student',
 });
 
-const rateIntervalOptions = toOptions<NonNullable<ContractFields['paySettings']>['rateInterval']>({
+const rateIntervalOptions = toOptions<RateInterval>({
 	hourly: 'Hourly',
 	monthly: 'Monthly',
 });
 
-const showForWrite = { operation: ['create', 'replace'], resource: ['employmentContract'] };
+const showOnlyForWrite = { operation: ['create', 'replace'], resource: ['employmentContract'] };
 
 /** A JSON field of Additional Fields, or `null` when it was not added. */
 function jsonSection<T>(fields: IDataObject, name: string): T | null {
@@ -35,6 +42,13 @@ function jsonSection<T>(fields: IDataObject, name: string): T | null {
 function contractFields(this: IExecuteSingleFunctions): ContractFields {
 	const fields = this.getNodeParameter('additionalFields', {}) as IDataObject;
 	const timeZone = this.getTimezone();
+	if (fields.payRate === undefined && (fields.rateInterval || fields.wageTypeId)) {
+		throw new NodeOperationError(
+			this.getNode(),
+			"'Pay Rate Interval' and 'Wage Type ID' need 'Pay Rate'",
+			{ description: 'Without a pay rate the contract is saved without pay settings.' },
+		);
+	}
 	return {
 		activeFromIso: toCalendarDate(this.getNodeParameter('activeFrom'), timeZone),
 		activeUntilIso: fields.activeUntil ? toCalendarDate(fields.activeUntil, timeZone) : null,
@@ -45,7 +59,7 @@ function contractFields(this: IExecuteSingleFunctions): ContractFields {
 				? null
 				: {
 						rateCents: Math.round((fields.payRate as number) * 100),
-						rateInterval: (fields.rateInterval ?? 'hourly') as 'hourly' | 'monthly',
+						rateInterval: (fields.rateInterval ?? 'hourly') as RateInterval,
 						wageTypeId: (fields.wageTypeId as string) || null,
 					},
 		absenceSettings: jsonSection(fields, 'absenceSettings'),
@@ -111,22 +125,11 @@ export const employmentContractDescription: INodeProperties[] = [
 			'updatedAt',
 		],
 		extraOperations: [
-			{
-				name: 'Delete',
-				value: 'delete',
-				action: 'Delete employment contract',
-				description: 'Delete an employment contract',
-				routing: {
-					request: {
-						method: 'DELETE',
-						url: '=/employment-contracts/{{$parameter.employmentContractId}}',
-					},
-					// The API answers 204 without a body.
-					output: {
-						postReceive: [{ type: 'set', properties: { value: '={{ { "deleted": true } }}' } }],
-					},
-				},
-			},
+			deleteOperation(
+				'employment contract',
+				'=/employment-contracts/{{$parameter.employmentContractId}}',
+				'Delete an employment contract',
+			),
 			{
 				name: 'Replace',
 				value: 'replace',
@@ -163,6 +166,14 @@ export const employmentContractDescription: INodeProperties[] = [
 		},
 	}),
 	{
+		displayName:
+			'Replace sends every field. Pay, absence, and work time settings that are not added below are removed from the contract.',
+		name: 'replaceNotice',
+		type: 'notice',
+		default: '',
+		displayOptions: { show: { operation: ['replace'], resource: ['employmentContract'] } },
+	},
+	{
 		displayName: 'Employee',
 		name: 'employeeId',
 		...locator('searchEmployees'),
@@ -176,7 +187,7 @@ export const employmentContractDescription: INodeProperties[] = [
 		required: true,
 		default: '',
 		description: 'First day the contract applies',
-		displayOptions: { show: showForWrite },
+		displayOptions: { show: showOnlyForWrite },
 	},
 	{
 		displayName: 'Employment Type',
@@ -185,7 +196,7 @@ export const employmentContractDescription: INodeProperties[] = [
 		options: employmentTypeOptions,
 		required: true,
 		default: 'full_time',
-		displayOptions: { show: showForWrite },
+		displayOptions: { show: showOnlyForWrite },
 	},
 	{
 		displayName: 'Additional Fields',
@@ -193,7 +204,7 @@ export const employmentContractDescription: INodeProperties[] = [
 		type: 'collection',
 		placeholder: 'Add Field',
 		default: {},
-		displayOptions: { show: showForWrite },
+		displayOptions: { show: showOnlyForWrite },
 		options: [
 			{
 				displayName: 'Absence Settings',
@@ -201,7 +212,7 @@ export const employmentContractDescription: INodeProperties[] = [
 				type: 'json',
 				default: absenceSettingsExample,
 				description:
-					'Vacation entitlement as JSON, in the shape of the API\'s <code>absenceSettings</code>. Leave out for none.',
+					"Vacation entitlement as JSON, in the shape of the API's <code>absenceSettings</code>. Leave out for none.",
 			},
 			{
 				displayName: 'Active Until',
@@ -214,7 +225,7 @@ export const employmentContractDescription: INodeProperties[] = [
 				displayName: 'Notes',
 				name: 'notes',
 				type: 'string',
-				typeOptions: { rows: 3 },
+				typeOptions: { rows: 3, maxLength: 10000 },
 				default: '',
 				description: 'Internal notes, not visible to the employee',
 			},
@@ -225,7 +236,7 @@ export const employmentContractDescription: INodeProperties[] = [
 				typeOptions: { minValue: 0, numberPrecision: 2 },
 				default: 0,
 				description:
-					"Pay per Pay Rate Interval in the organization's currency, e.g. 15.50. Leave out for no pay settings.",
+					"Pay per 'Pay Rate Interval' in the organization's currency, e.g. 15.50. Leave out for no pay settings.",
 			},
 			{
 				displayName: 'Pay Rate Interval',
@@ -233,14 +244,14 @@ export const employmentContractDescription: INodeProperties[] = [
 				type: 'options',
 				options: rateIntervalOptions,
 				default: 'hourly',
-				description: 'Whether the pay rate is per hour or per month. Needs a pay rate.',
+				description: "Whether the pay rate is per hour or per month. Needs 'Pay Rate'.",
 			},
 			{
 				displayName: 'Wage Type ID',
 				name: 'wageTypeId',
 				type: 'string',
 				default: '',
-				description: 'Wage type the pay is booked under. Needs a pay rate.',
+				description: "Wage type the pay is booked under. Needs 'Pay Rate'.",
 			},
 			{
 				displayName: 'Work Time Settings',
@@ -248,7 +259,7 @@ export const employmentContractDescription: INodeProperties[] = [
 				type: 'json',
 				default: workTimeSettingsExample,
 				description:
-					'Target work time as JSON, in the shape of the API\'s <code>workTimeSettings</code>. Leave out for none.',
+					"Target work time as JSON, in the shape of the API's <code>workTimeSettings</code>. Leave out for none.",
 			},
 		],
 	},

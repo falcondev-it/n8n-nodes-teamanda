@@ -5,31 +5,24 @@ import { multiDropdown } from '../shared/properties';
 type EmailBody = Body<'sendEmailMessage'>;
 type PushBody = Body<'sendPushMessage'>;
 
-const show = (operation: 'sendEmail' | 'sendPush') => ({
-	displayOptions: { show: { operation: [operation], resource: ['message'] } },
-});
-const showForBoth = {
-	displayOptions: { show: { operation: ['sendEmail', 'sendPush'], resource: ['message'] } },
-};
-
-function sendTo(url: string) {
-	return { request: { method: 'POST' as const, url } };
-}
+const showOnlyForEmail = { operation: ['sendEmail'], resource: ['message'] };
+const showOnlyForPush = { operation: ['sendPush'], resource: ['message'] };
+const showOnlyForMessages = { operation: ['sendEmail', 'sendPush'], resource: ['message'] };
 
 const operations: INodePropertyOptions[] = [
 	{
 		name: 'Send Email',
 		value: 'sendEmail',
-		action: 'Send an email to employees',
+		action: 'Send email',
 		description: "Send an email in the Teamanda layout from the organization's sender",
-		routing: sendTo('/messages/email'),
+		routing: { request: { method: 'POST', url: '/messages/email' } },
 	},
 	{
 		name: 'Send Push Notification',
 		value: 'sendPush',
-		action: 'Send a push notification to employees',
+		action: 'Send push notification',
 		description: 'Send a push notification to the Teamanda app of employees',
-		routing: sendTo('/messages/push'),
+		routing: { request: { method: 'POST', url: '/messages/push' } },
 	},
 ];
 
@@ -52,7 +45,7 @@ export const messageDescription: INodeProperties[] = [
 		name: 'userIds',
 		...multiDropdown('getEmployees'),
 		required: true,
-		...showForBoth,
+		displayOptions: { show: showOnlyForMessages },
 		routing: bodyField('userIds'),
 	},
 	{
@@ -62,7 +55,7 @@ export const messageDescription: INodeProperties[] = [
 		required: true,
 		default: '',
 		typeOptions: { maxLength: 200 },
-		...show('sendEmail'),
+		displayOptions: { show: showOnlyForEmail },
 		routing: bodyField('subject'),
 	},
 	{
@@ -72,7 +65,7 @@ export const messageDescription: INodeProperties[] = [
 		required: true,
 		default: '',
 		typeOptions: { maxLength: 100 },
-		...show('sendPush'),
+		displayOptions: { show: showOnlyForPush },
 		routing: bodyField('title'),
 	},
 	{
@@ -83,7 +76,7 @@ export const messageDescription: INodeProperties[] = [
 		default: '',
 		typeOptions: { rows: 5, maxLength: 10000 },
 		description: 'Plain text or Markdown without HTML. Images are dropped.',
-		...show('sendEmail'),
+		displayOptions: { show: showOnlyForEmail },
 		routing: bodyField('body'),
 	},
 	{
@@ -94,7 +87,7 @@ export const messageDescription: INodeProperties[] = [
 		default: '',
 		typeOptions: { rows: 3, maxLength: 500 },
 		description: 'Plain text',
-		...show('sendPush'),
+		displayOptions: { show: showOnlyForPush },
 		routing: bodyField('body'),
 	},
 	{
@@ -102,10 +95,11 @@ export const messageDescription: INodeProperties[] = [
 		name: 'idempotencyKey',
 		type: 'string',
 		required: true,
-		default: '={{ $execution.id }}-{{ $itemIndex }}',
+		default: '={{ $execution.id }}-{{ $nodeId }}-{{ $runIndex }}-{{ $itemIndex }}',
+		typeOptions: { maxLength: 200 },
 		description:
-			'Unique per message. A recipient who already got a message with this key on this channel gets nothing new, so a retried request does not send twice.',
-		...showForBoth,
+			"Unique per message. A recipient who already got a message with this key on this channel gets nothing new, so 'Retry On Fail' does not send twice. To also survive re-running the execution, build the key from your data, e.g. the absence request ID.",
+		displayOptions: { show: showOnlyForMessages },
 		routing: bodyField('idempotencyKey'),
 	},
 	{
@@ -114,6 +108,6 @@ export const messageDescription: INodeProperties[] = [
 		name: 'messageNotice',
 		type: 'notice',
 		default: '',
-		...showForBoth,
+		displayOptions: { show: showOnlyForMessages },
 	},
 ];
