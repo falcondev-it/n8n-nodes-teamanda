@@ -23,10 +23,13 @@ export type ResourceName =
 	| 'dailyReport'
 	| 'employee'
 	| 'employeeField'
+	| 'employmentContract'
 	| 'formSubmission'
+	| 'message'
 	| 'overtimePayout'
 	| 'payRate'
 	| 'project'
+	| 'projectAssignment'
 	| 'resource'
 	| 'resourceBooking'
 	| 'specialPayment'
@@ -83,6 +86,26 @@ export type ResourceSpec<Id extends OperationId = OperationId> = {
 			create: CreateSpec<Id>;
 	  }
 );
+
+/** A Delete operation. The API answers 204 without a body, so it outputs `{ deleted: true }`. */
+export function deleteOperation(
+	noun: string,
+	url: string,
+	description: string,
+): INodePropertyOptions {
+	return {
+		name: 'Delete',
+		value: 'delete',
+		action: `Delete ${noun}`,
+		description,
+		routing: {
+			request: { method: 'DELETE', url },
+			output: {
+				postReceive: [{ type: 'set', properties: { value: '={{ { "deleted": true } }}' } }],
+			},
+		},
+	};
+}
 
 /** Get, Get Many, the record ID, and the Return All / Limit pair. */
 export function resourceProperties<Id extends OperationId = OperationId>(

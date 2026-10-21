@@ -2,6 +2,7 @@ import type { IDataObject, INodeProperties } from 'n8n-workflow';
 import { queryRouting, toUtc, type Body } from '../../api';
 import {
 	archivedFilter,
+	deleteOperation,
 	dropdown,
 	employeesFilter,
 	filterProperties,
@@ -41,19 +42,11 @@ export const timeEntryDescription: INodeProperties[] = [
 			'updatedAt',
 		],
 		extraOperations: [
-			{
-				name: 'Delete',
-				value: 'delete',
-				action: 'Delete time entry',
-				description: 'Delete a time entry. Teamanda keeps it as archived.',
-				routing: {
-					request: { method: 'DELETE', url: '=/time-entries/{{$parameter.timeEntryId}}' },
-					// The API answers 204 without a body.
-					output: {
-						postReceive: [{ type: 'set', properties: { value: '={{ { "deleted": true } }}' } }],
-					},
-				},
-			},
+			deleteOperation(
+				'time entry',
+				'=/time-entries/{{$parameter.timeEntryId}}',
+				'Delete a time entry. Teamanda keeps it as archived.',
+			),
 		],
 		create: {
 			description: 'Create a new completed time entry',

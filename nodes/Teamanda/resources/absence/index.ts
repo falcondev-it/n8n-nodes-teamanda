@@ -1,5 +1,5 @@
 import type { INodeProperties } from 'n8n-workflow';
-import { queryRouting, toOptions, type Query } from '../../api';
+import { CALENDAR_DATE, queryRouting, toOptions, type Query } from '../../api';
 import {
 	archivedFilter,
 	employeesFilter,
@@ -9,6 +9,8 @@ import {
 	updatedSinceFilter,
 	windowFilters,
 } from '../shared/properties';
+
+const showOnlyForVacationBalances = { operation: ['getVacationBalances'], resource: ['absence'] };
 
 const statusOptions = toOptions<NonNullable<Query<'listAbsenceRequests'>['status']>[number]>({
 	approved: 'Approved',
@@ -42,8 +44,37 @@ export const absenceDescription: INodeProperties[] = [
 					},
 				},
 			},
+			{
+				name: 'Get Vacation Balances',
+				value: 'getVacationBalances',
+				action: 'Get vacation balances',
+				description: 'Get the remaining vacation days of each employee on a day',
+				routing: {
+					request: { method: 'GET', url: '/absences/vacation-balances' },
+					output: {
+						postReceive: [{ type: 'rootProperty', properties: { property: 'items' } }],
+					},
+				},
+			},
 		],
 	}),
+	{
+		displayName: 'Date',
+		name: 'balanceDate',
+		type: 'dateTime',
+		required: true,
+		default: '',
+		description: 'Day the balances are calculated for',
+		displayOptions: { show: showOnlyForVacationBalances },
+		routing: queryRouting<'listVacationBalances'>('date', CALENDAR_DATE),
+	},
+	{
+		...employeesFilter<'listVacationBalances'>(),
+		name: 'balanceUserIds',
+		description:
+			'Only these employees. Defaults to all active employees the API key may see. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+		displayOptions: { show: showOnlyForVacationBalances },
+	},
 	...windowFilters<'listAbsentUsers'>('date', {
 		required: true,
 		displayOptions: { show: { operation: ['getAbsentUsers'], resource: ['absence'] } },
