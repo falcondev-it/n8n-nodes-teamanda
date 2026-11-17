@@ -107,10 +107,6 @@ parameter that Teamanda renames fails the build.
 - [Monitor fire safety training](https://github.com/falcondev-it/n8n-nodes-teamanda/blob/dev/examples/fire-safety-training.workflow.json):
   creates a Teamanda task every day for each active employee whose last fire safety training
   is older than 6 months. Import the file in n8n and follow the setup steps in its sticky note.
-- [File emails in the construction record](https://github.com/falcondev-it/n8n-nodes-teamanda/blob/dev/examples/email-to-construction-record.workflow.json):
-  reads incoming emails, finds the project by the number in the subject, and posts the email
-  text and attachments to its construction record. The sender gets an email with the reason
-  when the subject has no project number, no project has it, or Teamanda rejects the post.
 
 ## Resources
 
