@@ -69,10 +69,12 @@ List operations support `Return All`, pagination, their resource-specific filter
 `Sort` collection. Task, time entry, daily report, and employment contract operations return
 at most 10 fields by default; turn off `Simplify` to get the full response. Deleting a time
 entry archives it in Teamanda. Deleting a time entry or an employment contract outputs
-`{ "deleted": true }`. Creating time entries, tasks, projects, tags, and cost centers (unless
-a number is given) is not idempotent, so do not automatically retry it after an ambiguous
-timeout. Project members, locations, and custom fields cannot be
-set through the API.
+`{ "deleted": true }`. Creating time entries, tasks, tags, and cost centers (unless a number
+is given) is not idempotent, so do not automatically retry it after an ambiguous timeout.
+Creating a project requires a project number that no other project uses, so a retry fails
+instead of creating a second project. Project members, locations, and custom fields cannot be
+set through the API. Get Many for projects filters by exact project number or by a part of the
+name.
 
 Replacing an employment contract sends every field, so settings left out of Additional Fields
 are removed. Absence and work time settings are entered as JSON in the API's shape. Messages

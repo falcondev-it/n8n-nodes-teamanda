@@ -1,5 +1,5 @@
 import type { IDataObject, INodeProperties } from 'n8n-workflow';
-import { toCalendarDate } from '../../api';
+import { queryRouting, toCalendarDate } from '../../api';
 import {
 	archivedFilter,
 	filterProperties,
@@ -25,11 +25,12 @@ export const projectDescription: INodeProperties[] = [
 		},
 		create: {
 			description:
-				'Create a new project. Not idempotent. Members, locations, and custom fields are set in Teamanda.',
+				'Create a new project. Fails if another project already uses the project number. Members, locations, and custom fields are set in Teamanda.',
 			body() {
 				const additionalFields = this.getNodeParameter('additionalFields', {}) as IDataObject;
 				const timeZone = this.getTimezone();
 				return {
+					customId: this.getNodeParameter('customId') as string,
 					name: this.getNodeParameter('name') as string,
 					startDateIso: toCalendarDate(this.getNodeParameter('startDate'), timeZone),
 					endDateIso: additionalFields.endDate
@@ -41,6 +42,16 @@ export const projectDescription: INodeProperties[] = [
 			},
 		},
 	}),
+	{
+		displayName: 'Project Number',
+		name: 'customId',
+		type: 'string',
+		required: true,
+		default: '',
+		typeOptions: { maxLength: 20 },
+		displayOptions: { show: showOnlyForCreate },
+		description: 'Unique within the organization, e.g. 2026-014',
+	},
 	{
 		displayName: 'Name',
 		name: 'name',
@@ -89,6 +100,22 @@ export const projectDescription: INodeProperties[] = [
 	},
 	filterProperties('project', [
 		archivedFilter<'listProjects'>(),
+		{
+			displayName: 'Name Contains',
+			name: 'search',
+			type: 'string',
+			default: '',
+			description: 'Only projects whose name contains this text, ignoring case',
+			routing: queryRouting<'listProjects'>('search'),
+		},
+		{
+			displayName: 'Project Number',
+			name: 'customId',
+			type: 'string',
+			default: '',
+			description: 'Only the project with exactly this project number',
+			routing: queryRouting<'listProjects'>('customId'),
+		},
 		updatedSinceFilter<'listProjects'>(),
 	]),
 	sortProperty<'listProjects'>('project', ['name', '-name']),
