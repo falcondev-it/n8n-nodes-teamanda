@@ -403,7 +403,7 @@ export interface paths {
 		};
 		/**
 		 * List absent employees
-		 * @description Counts approved and booked absences. `from` and `to` are calendar dates in the organization’s time zone, not timestamps.
+		 * @description Lists every calendar day an approved or booked absence request covers. `from` and `to` are calendar dates in the organization’s time zone, not timestamps.
 		 */
 		get: operations['listAbsentUsers'];
 		put?: never;
@@ -544,6 +544,30 @@ export interface paths {
 		 */
 		get: operations['listOvertimePayouts'];
 		put?: never;
+		/**
+		 * Create an overtime payout
+		 * @description Requires `configure_wage_salary`. Pays out overtime hours, e.g. hours worked beyond the Soll of a month. Unless `excludedFromOvertimeBalance` is set, the hours come off the overtime balance from `date` on. The payout shows up in the Lohnauswertung and every DATEV export.
+		 */
+		post: operations['createOvertimePayout'];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/wage/overtime-payouts/{id}': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		/**
+		 * Replace an overtime payout
+		 * @description Requires `configure_wage_salary`. Replaces every field except the employee and recalculates the overtime balance of the old and new date.
+		 */
+		put: operations['updateOvertimePayout'];
 		post?: never;
 		delete?: never;
 		options?: never;
@@ -563,7 +587,9 @@ export interface paths {
 		put?: never;
 		/**
 		 * Create a project
-		 * @description Not idempotent: retrying after a timeout creates a second project. Members, company sites and custom fields cannot be set through this API.
+		 * @description Not idempotent: retrying after a timeout without the same `customId` creates a second project. Members, company sites and custom fields cannot be set through this API.
+		 *
+		 *     Breaking change: `customId` is required. Requests without it are rejected with 422; a `customId` another project of the organization already uses is rejected with 422 too.
 		 */
 		post: operations['createProject'];
 		delete?: never;
@@ -583,6 +609,26 @@ export interface paths {
 		get: operations['getProject'];
 		put?: never;
 		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/projects/{id}/construction-record/posts': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		/**
+		 * Create a Projektakte post
+		 * @description Send `multipart/form-data` with a `Content-Length` header: `text`, any number of `files` fields and an optional `idempotencyKey`. A request may be at most 100 MB. The post and its files are written together, so a rejected request creates nothing. Posts written through this API are authored by the employee who created the API key.
+		 */
+		post: operations['createConstructionRecordPost'];
 		delete?: never;
 		options?: never;
 		head?: never;
@@ -984,6 +1030,7 @@ export interface operations {
 								| 'view_absent_users'
 								| 'view_user_data_for_others'
 								| 'view_wage_salary_for_others'
+								| 'configure_wage_salary'
 								| 'view_workspace_scheduling_for_others'
 								| 'view_dynamic_form_submissions_for_others'
 								| 'manage_time_entries_for_others'
@@ -992,7 +1039,8 @@ export interface operations {
 								| 'manage_projects'
 								| 'manage_cost_centers'
 								| 'manage_project_planning'
-								| 'send_messages';
+								| 'send_messages'
+								| 'create_construction_record_posts';
 							/** @description Teams the grant is limited to; `null` for the whole organization. */
 							targetTeamIds: string[] | null;
 						}[];
@@ -1677,10 +1725,6 @@ export interface operations {
 							absenceSettings: {
 								/** @description Vacation days granted per year. */
 								yearlyQuotaWorkDays: number;
-								/** @description Vacation days granted for the vacation year named by `initialQuotaYear`. */
-								initialQuotaWorkDays: number | null;
-								/** @description Vacation year the initial quota counts towards; the contract start year when `null`. */
-								initialQuotaYear: number | null;
 								/** @description Splits the yearly quota into parts granted every this many months. */
 								allocationIntervalMonths: number | null;
 								/** @description Months by which the quota grant is postponed. */
@@ -1701,13 +1745,13 @@ export interface operations {
 											/** @constant */
 											type: 'never';
 									  };
+								/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+								initialQuotaWorkDays?: null;
+								/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+								initialQuotaYear?: null;
 							} | null;
 							/** @description Target work time; `null` when the employee has none. */
 							workTimeSettings: {
-								/** @description Overtime balance carried in when the contract starts. */
-								initialOvertimeMinutes: number | null;
-								/** @description Flextime balance carried in when the contract starts. */
-								initialFlexOvertimeMinutes: number | null;
 								/** @description Largest overtime balance allowed; `null` for no limit. */
 								maxTimeCreditMinutes: number | null;
 								/** @description Lowest overtime balance allowed, as a negative number; `null` for no limit. */
@@ -1727,7 +1771,7 @@ export interface operations {
 									weekParity: ('even' | 'odd') | null;
 									/** @description Fixed daily targets; `null` for a flexible model. */
 									fixed: {
-										/** @description Target minutes per weekday, Monday first. Contracts carried over from a work time model can hold fractional minutes. */
+										/** @description Target minutes per weekday, Monday first. Contracts carried over from a time tracking profile can hold fractional minutes. */
 										weekDayWorkMinutes: number[];
 										/** @description Work days without a target; their `weekDayWorkMinutes` are 0. */
 										daysWithoutTarget: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[];
@@ -1742,6 +1786,10 @@ export interface operations {
 										maxMonthlyWorkMinutes: number | null;
 									} | null;
 								}[];
+								/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+								initialOvertimeMinutes?: null;
+								/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+								initialFlexOvertimeMinutes?: null;
 							} | null;
 							/**
 							 * Format: uuid
@@ -2075,10 +2123,6 @@ export interface operations {
 					absenceSettings: {
 						/** @description Vacation days granted per year. */
 						yearlyQuotaWorkDays: number;
-						/** @description Vacation days granted for the vacation year named by `initialQuotaYear`. */
-						initialQuotaWorkDays: number | null;
-						/** @description Vacation year the initial quota counts towards; the contract start year when `null`. */
-						initialQuotaYear: number | null;
 						/** @description Splits the yearly quota into parts granted every this many months. */
 						allocationIntervalMonths: number | null;
 						/** @description Months by which the quota grant is postponed. */
@@ -2106,13 +2150,13 @@ export interface operations {
 									type: 'after_months';
 									months: number;
 							  };
+						/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+						initialQuotaWorkDays?: null;
+						/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+						initialQuotaYear?: null;
 					} | null;
 					/** @description Target work time; `null` when the employee has none. */
 					workTimeSettings: {
-						/** @description Overtime balance carried in when the contract starts. */
-						initialOvertimeMinutes: number | null;
-						/** @description Flextime balance carried in when the contract starts. */
-						initialFlexOvertimeMinutes: number | null;
 						/** @description Largest overtime balance allowed; `null` for no limit. */
 						maxTimeCreditMinutes: number | null;
 						/** @description Lowest overtime balance allowed, as a negative number; `null` for no limit. */
@@ -2147,6 +2191,10 @@ export interface operations {
 									};
 							  }
 						)[];
+						/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+						initialOvertimeMinutes?: null;
+						/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+						initialFlexOvertimeMinutes?: null;
 					} | null;
 				};
 			};
@@ -2204,10 +2252,6 @@ export interface operations {
 						absenceSettings: {
 							/** @description Vacation days granted per year. */
 							yearlyQuotaWorkDays: number;
-							/** @description Vacation days granted for the vacation year named by `initialQuotaYear`. */
-							initialQuotaWorkDays: number | null;
-							/** @description Vacation year the initial quota counts towards; the contract start year when `null`. */
-							initialQuotaYear: number | null;
 							/** @description Splits the yearly quota into parts granted every this many months. */
 							allocationIntervalMonths: number | null;
 							/** @description Months by which the quota grant is postponed. */
@@ -2228,13 +2272,13 @@ export interface operations {
 										/** @constant */
 										type: 'never';
 								  };
+							/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+							initialQuotaWorkDays?: null;
+							/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+							initialQuotaYear?: null;
 						} | null;
 						/** @description Target work time; `null` when the employee has none. */
 						workTimeSettings: {
-							/** @description Overtime balance carried in when the contract starts. */
-							initialOvertimeMinutes: number | null;
-							/** @description Flextime balance carried in when the contract starts. */
-							initialFlexOvertimeMinutes: number | null;
 							/** @description Largest overtime balance allowed; `null` for no limit. */
 							maxTimeCreditMinutes: number | null;
 							/** @description Lowest overtime balance allowed, as a negative number; `null` for no limit. */
@@ -2254,7 +2298,7 @@ export interface operations {
 								weekParity: ('even' | 'odd') | null;
 								/** @description Fixed daily targets; `null` for a flexible model. */
 								fixed: {
-									/** @description Target minutes per weekday, Monday first. Contracts carried over from a work time model can hold fractional minutes. */
+									/** @description Target minutes per weekday, Monday first. Contracts carried over from a time tracking profile can hold fractional minutes. */
 									weekDayWorkMinutes: number[];
 									/** @description Work days without a target; their `weekDayWorkMinutes` are 0. */
 									daysWithoutTarget: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[];
@@ -2269,6 +2313,10 @@ export interface operations {
 									maxMonthlyWorkMinutes: number | null;
 								} | null;
 							}[];
+							/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+							initialOvertimeMinutes?: null;
+							/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+							initialFlexOvertimeMinutes?: null;
 						} | null;
 						/**
 						 * Format: uuid
@@ -2612,10 +2660,6 @@ export interface operations {
 						absenceSettings: {
 							/** @description Vacation days granted per year. */
 							yearlyQuotaWorkDays: number;
-							/** @description Vacation days granted for the vacation year named by `initialQuotaYear`. */
-							initialQuotaWorkDays: number | null;
-							/** @description Vacation year the initial quota counts towards; the contract start year when `null`. */
-							initialQuotaYear: number | null;
 							/** @description Splits the yearly quota into parts granted every this many months. */
 							allocationIntervalMonths: number | null;
 							/** @description Months by which the quota grant is postponed. */
@@ -2636,13 +2680,13 @@ export interface operations {
 										/** @constant */
 										type: 'never';
 								  };
+							/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+							initialQuotaWorkDays?: null;
+							/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+							initialQuotaYear?: null;
 						} | null;
 						/** @description Target work time; `null` when the employee has none. */
 						workTimeSettings: {
-							/** @description Overtime balance carried in when the contract starts. */
-							initialOvertimeMinutes: number | null;
-							/** @description Flextime balance carried in when the contract starts. */
-							initialFlexOvertimeMinutes: number | null;
 							/** @description Largest overtime balance allowed; `null` for no limit. */
 							maxTimeCreditMinutes: number | null;
 							/** @description Lowest overtime balance allowed, as a negative number; `null` for no limit. */
@@ -2662,7 +2706,7 @@ export interface operations {
 								weekParity: ('even' | 'odd') | null;
 								/** @description Fixed daily targets; `null` for a flexible model. */
 								fixed: {
-									/** @description Target minutes per weekday, Monday first. Contracts carried over from a work time model can hold fractional minutes. */
+									/** @description Target minutes per weekday, Monday first. Contracts carried over from a time tracking profile can hold fractional minutes. */
 									weekDayWorkMinutes: number[];
 									/** @description Work days without a target; their `weekDayWorkMinutes` are 0. */
 									daysWithoutTarget: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[];
@@ -2677,6 +2721,10 @@ export interface operations {
 									maxMonthlyWorkMinutes: number | null;
 								} | null;
 							}[];
+							/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+							initialOvertimeMinutes?: null;
+							/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+							initialFlexOvertimeMinutes?: null;
 						} | null;
 						/**
 						 * Format: uuid
@@ -3004,10 +3052,6 @@ export interface operations {
 					absenceSettings: {
 						/** @description Vacation days granted per year. */
 						yearlyQuotaWorkDays: number;
-						/** @description Vacation days granted for the vacation year named by `initialQuotaYear`. */
-						initialQuotaWorkDays: number | null;
-						/** @description Vacation year the initial quota counts towards; the contract start year when `null`. */
-						initialQuotaYear: number | null;
 						/** @description Splits the yearly quota into parts granted every this many months. */
 						allocationIntervalMonths: number | null;
 						/** @description Months by which the quota grant is postponed. */
@@ -3035,13 +3079,13 @@ export interface operations {
 									type: 'after_months';
 									months: number;
 							  };
+						/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+						initialQuotaWorkDays?: null;
+						/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+						initialQuotaYear?: null;
 					} | null;
 					/** @description Target work time; `null` when the employee has none. */
 					workTimeSettings: {
-						/** @description Overtime balance carried in when the contract starts. */
-						initialOvertimeMinutes: number | null;
-						/** @description Flextime balance carried in when the contract starts. */
-						initialFlexOvertimeMinutes: number | null;
 						/** @description Largest overtime balance allowed; `null` for no limit. */
 						maxTimeCreditMinutes: number | null;
 						/** @description Lowest overtime balance allowed, as a negative number; `null` for no limit. */
@@ -3076,6 +3120,10 @@ export interface operations {
 									};
 							  }
 						)[];
+						/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+						initialOvertimeMinutes?: null;
+						/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+						initialFlexOvertimeMinutes?: null;
 					} | null;
 				};
 			};
@@ -3131,10 +3179,6 @@ export interface operations {
 						absenceSettings: {
 							/** @description Vacation days granted per year. */
 							yearlyQuotaWorkDays: number;
-							/** @description Vacation days granted for the vacation year named by `initialQuotaYear`. */
-							initialQuotaWorkDays: number | null;
-							/** @description Vacation year the initial quota counts towards; the contract start year when `null`. */
-							initialQuotaYear: number | null;
 							/** @description Splits the yearly quota into parts granted every this many months. */
 							allocationIntervalMonths: number | null;
 							/** @description Months by which the quota grant is postponed. */
@@ -3155,13 +3199,13 @@ export interface operations {
 										/** @constant */
 										type: 'never';
 								  };
+							/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+							initialQuotaWorkDays?: null;
+							/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+							initialQuotaYear?: null;
 						} | null;
 						/** @description Target work time; `null` when the employee has none. */
 						workTimeSettings: {
-							/** @description Overtime balance carried in when the contract starts. */
-							initialOvertimeMinutes: number | null;
-							/** @description Flextime balance carried in when the contract starts. */
-							initialFlexOvertimeMinutes: number | null;
 							/** @description Largest overtime balance allowed; `null` for no limit. */
 							maxTimeCreditMinutes: number | null;
 							/** @description Lowest overtime balance allowed, as a negative number; `null` for no limit. */
@@ -3181,7 +3225,7 @@ export interface operations {
 								weekParity: ('even' | 'odd') | null;
 								/** @description Fixed daily targets; `null` for a flexible model. */
 								fixed: {
-									/** @description Target minutes per weekday, Monday first. Contracts carried over from a work time model can hold fractional minutes. */
+									/** @description Target minutes per weekday, Monday first. Contracts carried over from a time tracking profile can hold fractional minutes. */
 									weekDayWorkMinutes: number[];
 									/** @description Work days without a target; their `weekDayWorkMinutes` are 0. */
 									daysWithoutTarget: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[];
@@ -3196,6 +3240,10 @@ export interface operations {
 									maxMonthlyWorkMinutes: number | null;
 								} | null;
 							}[];
+							/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+							initialOvertimeMinutes?: null;
+							/** @description Deprecated: omit it or send `null`. Opening balances are one-time corrections of the employee now, entered in Teamanda next to the employment contract. Stops being accepted with the next release. */
+							initialFlexOvertimeMinutes?: null;
 						} | null;
 						/**
 						 * Format: uuid
@@ -3827,9 +3875,11 @@ export interface operations {
 							 * @description Task category, from `GET /options/task-categories`.
 							 */
 							categoryId: string;
+							/** @description Employees responsible for the task. */
+							assignedUserIds: string[];
 							/**
 							 * Format: uuid
-							 * @description Employee responsible for the task; must not be archived.
+							 * @description Deprecated, use `assignedUserIds`. On input, makes this employee the only one responsible. On output, the first of `assignedUserIds`.
 							 */
 							assignedUserId: string;
 							/**
@@ -4139,11 +4189,13 @@ export interface operations {
 					 * @description Task category, from `GET /options/task-categories`.
 					 */
 					categoryId: string;
+					/** @description Employees responsible for the task, 1 to 50; none may be archived. */
+					assignedUserIds?: [string];
 					/**
 					 * Format: uuid
-					 * @description Employee responsible for the task; must not be archived.
+					 * @description Deprecated, use `assignedUserIds`. On input, makes this employee the only one responsible. On output, the first of `assignedUserIds`.
 					 */
-					assignedUserId: string;
+					assignedUserId?: string;
 					/** @description When the task is planned for. */
 					plannedAt: string | null;
 				};
@@ -4188,9 +4240,11 @@ export interface operations {
 						 * @description Task category, from `GET /options/task-categories`.
 						 */
 						categoryId: string;
+						/** @description Employees responsible for the task. */
+						assignedUserIds: string[];
 						/**
 						 * Format: uuid
-						 * @description Employee responsible for the task; must not be archived.
+						 * @description Deprecated, use `assignedUserIds`. On input, makes this employee the only one responsible. On output, the first of `assignedUserIds`.
 						 */
 						assignedUserId: string;
 						/**
@@ -4525,9 +4579,11 @@ export interface operations {
 						 * @description Task category, from `GET /options/task-categories`.
 						 */
 						categoryId: string;
+						/** @description Employees responsible for the task. */
+						assignedUserIds: string[];
 						/**
 						 * Format: uuid
-						 * @description Employee responsible for the task; must not be archived.
+						 * @description Deprecated, use `assignedUserIds`. On input, makes this employee the only one responsible. On output, the first of `assignedUserIds`.
 						 */
 						assignedUserId: string;
 						/**
@@ -4836,9 +4892,11 @@ export interface operations {
 					 * @description Task category, from `GET /options/task-categories`.
 					 */
 					categoryId?: string;
+					/** @description Employees responsible for the task, 1 to 50; none may be archived. */
+					assignedUserIds?: [string];
 					/**
 					 * Format: uuid
-					 * @description Employee responsible for the task; must not be archived.
+					 * @description Deprecated, use `assignedUserIds`. On input, makes this employee the only one responsible. On output, the first of `assignedUserIds`.
 					 */
 					assignedUserId?: string;
 					/** @description When the task is planned for. */
@@ -4888,9 +4946,11 @@ export interface operations {
 						 * @description Task category, from `GET /options/task-categories`.
 						 */
 						categoryId: string;
+						/** @description Employees responsible for the task. */
+						assignedUserIds: string[];
 						/**
 						 * Format: uuid
-						 * @description Employee responsible for the task; must not be archived.
+						 * @description Deprecated, use `assignedUserIds`. On input, makes this employee the only one responsible. On output, the first of `assignedUserIds`.
 						 */
 						assignedUserId: string;
 						/**
@@ -5606,7 +5666,7 @@ export interface operations {
 			};
 		};
 		responses: {
-			/** @description The time entry as stored after work-time-model calculations. */
+			/** @description The time entry as stored after time-tracking-profile calculations. */
 			201: {
 				headers: {
 					/** @description Identifier shared by the response, logs, and error tracking. */
@@ -8672,9 +8732,15 @@ export interface operations {
 							 * @description Project assignment id.
 							 */
 							id: string;
-							/** @description First planned day, as `YYYY-MM-DD`. */
+							/**
+							 * Format: date
+							 * @description First planned day, as `YYYY-MM-DD`.
+							 */
 							startDate: string;
-							/** @description Last planned day, as `YYYY-MM-DD`. */
+							/**
+							 * Format: date
+							 * @description Last planned day, as `YYYY-MM-DD`.
+							 */
 							endDate: string;
 							/** @description Free-text note on the project assignment. */
 							note: string | null;
@@ -9007,9 +9073,15 @@ export interface operations {
 						 * @description Project assignment id.
 						 */
 						id: string;
-						/** @description First planned day, as `YYYY-MM-DD`. */
+						/**
+						 * Format: date
+						 * @description First planned day, as `YYYY-MM-DD`.
+						 */
 						startDate: string;
-						/** @description Last planned day, as `YYYY-MM-DD`. */
+						/**
+						 * Format: date
+						 * @description Last planned day, as `YYYY-MM-DD`.
+						 */
 						endDate: string;
 						/** @description Free-text note on the project assignment. */
 						note: string | null;
@@ -12930,6 +13002,705 @@ export interface operations {
 			};
 		};
 	};
+	createOvertimePayout: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				'application/json': {
+					/**
+					 * Format: date
+					 * @description Day the payout is booked on for payroll.
+					 */
+					date: string;
+					/** @description Overtime minutes to pay out. */
+					payoutMinutes: number;
+					/** @description Rate the minutes are paid at, in cents per hour. */
+					centsPerHour: number;
+					/**
+					 * @description `true` pays the hours without taking them off the overtime balance, e.g. for hours already taken as time off.
+					 * @default false
+					 */
+					excludedFromOvertimeBalance?: boolean;
+					/** @description Free-text reason for the payout. */
+					note: string;
+					/**
+					 * @description Wage type to book the payout under; `null` uses the default overtime wage type.
+					 * @default null
+					 */
+					wageTypeId?: string | null;
+					/**
+					 * Format: uuid
+					 * @description Employee to pay.
+					 */
+					userId: string;
+				};
+			};
+		};
+		responses: {
+			/** @description The created overtime payout. */
+			201: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Path of the created resource. */
+					Location?: string;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						/**
+						 * Format: uuid
+						 * @description Payment id.
+						 */
+						id: string;
+						/**
+						 * Format: uuid
+						 * @description Employee the payment goes to.
+						 */
+						userId: string;
+						/** @description Day the payment is booked on for payroll, as `YYYY-MM-DD`. */
+						date: string;
+						/** @description Free-text reason for the payment. */
+						note: string;
+						/** @description Wage type the payment is booked under. */
+						wageTypeId: string | null;
+						/** @description When the payment was archived. */
+						archivedAt: string | null;
+						/**
+						 * Format: date-time
+						 * @description When the payment was entered.
+						 */
+						createdAt: string;
+						/** @description Overtime minutes paid out. */
+						payoutMinutes: number;
+						/** @description Rate the minutes are paid at, in cents per hour. */
+						centsPerHour: number;
+						/** @description `true` when the payout did not reduce the overtime balance. */
+						excludedFromOvertimeBalance: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+						/** @description One entry per rejected input value. */
+						errors: ({
+							/** @description What is wrong with the value. */
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	updateOvertimePayout: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				'application/json': {
+					/**
+					 * Format: date
+					 * @description Day the payout is booked on for payroll.
+					 */
+					date: string;
+					/** @description Overtime minutes to pay out. */
+					payoutMinutes: number;
+					/** @description Rate the minutes are paid at, in cents per hour. */
+					centsPerHour: number;
+					/**
+					 * @description `true` pays the hours without taking them off the overtime balance, e.g. for hours already taken as time off.
+					 * @default false
+					 */
+					excludedFromOvertimeBalance?: boolean;
+					/** @description Free-text reason for the payout. */
+					note: string;
+					/**
+					 * @description Wage type to book the payout under; `null` uses the default overtime wage type.
+					 * @default null
+					 */
+					wageTypeId?: string | null;
+				};
+			};
+		};
+		responses: {
+			/** @description The updated overtime payout. */
+			200: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						/**
+						 * Format: uuid
+						 * @description Payment id.
+						 */
+						id: string;
+						/**
+						 * Format: uuid
+						 * @description Employee the payment goes to.
+						 */
+						userId: string;
+						/** @description Day the payment is booked on for payroll, as `YYYY-MM-DD`. */
+						date: string;
+						/** @description Free-text reason for the payment. */
+						note: string;
+						/** @description Wage type the payment is booked under. */
+						wageTypeId: string | null;
+						/** @description When the payment was archived. */
+						archivedAt: string | null;
+						/**
+						 * Format: date-time
+						 * @description When the payment was entered.
+						 */
+						createdAt: string;
+						/** @description Overtime minutes paid out. */
+						payoutMinutes: number;
+						/** @description Rate the minutes are paid at, in cents per hour. */
+						centsPerHour: number;
+						/** @description `true` when the payout did not reduce the overtime balance. */
+						excludedFromOvertimeBalance: boolean;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+						/** @description One entry per rejected input value. */
+						errors: ({
+							/** @description What is wrong with the value. */
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
 	listProjects: {
 		parameters: {
 			query?: {
@@ -12937,6 +13708,8 @@ export interface operations {
 				offset?: number;
 				archived?: boolean;
 				updatedSince?: string;
+				customId?: string;
+				search?: string;
 				sort?: 'name' | '-name';
 			};
 			header?: never;
@@ -12967,7 +13740,7 @@ export interface operations {
 							 * @description Project id.
 							 */
 							id: string;
-							/** @description Number shown in the app. */
+							/** @description Project ID set by the organization, unique within it, e.g. `2026-014`. */
 							customId: string;
 							/** @description Name of the project. */
 							name: string;
@@ -13273,6 +14046,8 @@ export interface operations {
 		requestBody: {
 			content: {
 				'application/json': {
+					/** @description Project ID, 1–20 characters, unique within the organization, e.g. `2026-014`. */
+					customId: string;
 					/** @description Name of the project. */
 					name: string;
 					/**
@@ -13315,7 +14090,7 @@ export interface operations {
 						 * @description Project id.
 						 */
 						id: string;
-						/** @description Number shown in the app. */
+						/** @description Project ID set by the organization, unique within it, e.g. `2026-014`. */
 						customId: string;
 						/** @description Name of the project. */
 						name: string;
@@ -13639,7 +14414,7 @@ export interface operations {
 						 * @description Project id.
 						 */
 						id: string;
-						/** @description Number shown in the app. */
+						/** @description Project ID set by the organization, unique within it, e.g. `2026-014`. */
 						customId: string;
 						/** @description Name of the project. */
 						name: string;
@@ -13779,6 +14554,409 @@ export interface operations {
 			};
 			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
 			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request does not match the endpoint contract. */
+			422: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+						/** @description One entry per rejected input value. */
+						errors: ({
+							/** @description What is wrong with the value. */
+							message: string;
+						} & {
+							[key: string]: unknown;
+						})[];
+					};
+				};
+			};
+			/** @description The API rate limit has been exceeded. */
+			429: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Seconds until another request may be attempted. */
+					'Retry-After'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request could not be completed because of an internal error. */
+			500: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+		};
+	};
+	createConstructionRecordPost: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: {
+			content: {
+				'multipart/form-data': {
+					/** @description Plain text or Markdown. HTML is shown as text, images are dropped. */
+					text?: string;
+					/**
+					 * @description Attachments, as repeated `files` or `files[]` fields: images, PDFs and office documents, at most 25 MB each.
+					 * @default []
+					 */
+					files?: (
+						| string
+						| unknown
+						| unknown
+						| unknown
+						| unknown
+						| unknown
+						| unknown
+						| unknown
+						| unknown
+						| unknown
+						| unknown
+						| unknown
+						| unknown
+						| unknown
+						| unknown
+						| unknown
+						| unknown
+						| unknown
+						| unknown
+						| unknown
+						| unknown
+						| unknown
+					)[];
+					/** @description Chosen by you, unique per post, e.g. the email’s Message-ID. A retry with the same key returns the post created first and uploads nothing. */
+					idempotencyKey?: string;
+				};
+			};
+		};
+		responses: {
+			/** @description The created post, or the earlier post with the same `idempotencyKey`. */
+			201: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					/** @description Path of the created resource. */
+					Location?: string;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						/**
+						 * Format: uuid
+						 * @description Post id.
+						 */
+						id: string;
+						/**
+						 * Format: uuid
+						 * @description Project the post belongs to.
+						 */
+						projectId: string;
+						/**
+						 * Format: uuid
+						 * @description Employee shown as the author.
+						 */
+						authorUserId: string;
+						/** @description The text as rendered in the Projektakte. */
+						contentHtml: string | null;
+						/** @description The uploaded files. */
+						attachments: {
+							/**
+							 * Format: uuid
+							 * @description Attachment id.
+							 */
+							id: string;
+							/** @description File name as stored. */
+							fileName: string;
+							/** @description MIME type detected from the file content. */
+							contentType: string;
+							/** @description Stored size in bytes. */
+							size: number;
+						}[];
+						/**
+						 * Format: date-time
+						 * @description When the post was created.
+						 */
+						createdAt: string;
+					};
+				};
+			};
+			/** @description The request body could not be parsed. */
+			400: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description The API key is missing, invalid, expired, or revoked. */
+			401: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description This API key may not access the requested resource., The required module is not enabled for this organization. */
+			403: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description No resource matches the requested id., The requested API endpoint does not exist. */
+			404: {
+				headers: {
+					/** @description Identifier shared by the response, logs, and error tracking. */
+					'x-request-id'?: string;
+					/** @description Maximum size of the rate limit bucket applied to this request. */
+					'X-RateLimit-Limit'?: number;
+					/** @description Requests remaining in the rate limit bucket. */
+					'X-RateLimit-Remaining'?: number;
+					/** @description Unix timestamp in seconds when the bucket next refills. */
+					'X-RateLimit-Reset'?: number;
+					[name: string]: unknown;
+				};
+				content: {
+					'application/problem+json': {
+						/**
+						 * Format: uri
+						 * @description URL of the error class documentation.
+						 */
+						type: string;
+						/** @description Short name of the error class. */
+						title: string;
+						/** @description HTTP status code. */
+						status: number;
+						/** @description What went wrong with this request. */
+						detail: string;
+						/**
+						 * Format: uuid
+						 * @description Identifier shared by the response, logs, and error tracking.
+						 */
+						requestId: string;
+						/** @description What to do about it. */
+						resolution: string;
+					};
+				};
+			};
+			/** @description The request body exceeds 100 MB. */
+			413: {
 				headers: {
 					/** @description Identifier shared by the response, logs, and error tracking. */
 					'x-request-id'?: string;
