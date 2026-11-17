@@ -11,8 +11,8 @@
 
 This n8n community node lets workflows read Teamanda employee, absence, attendance, payroll,
 form, and scheduling data, manage time entries, tasks, projects, tags, cost centers, and
-employment contracts, and send emails and push notifications to employees through the Teamanda
-REST API.
+employment contracts, post text and files to a project's construction record, and send emails
+and push notifications to employees through the Teamanda REST API.
 
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/sustainable-use-license/) workflow automation platform.
 
@@ -33,6 +33,7 @@ community nodes documentation and install the package `@falcondev-it/n8n-nodes-t
 
 - Absence: Get, Get Absent Employees, Get Many, Get Vacation Balances
 - Attendance: Get Many
+- Construction Record Post: Create
 - Cost Center: Create, Get, Get Many
 - Daily Report: Get Many
 - Employee: Get, Get Many
@@ -76,6 +77,16 @@ instead of creating a second project. Project members, locations, and custom fie
 set through the API. Get Many for projects filters by exact project number or by a part of the
 name.
 
+A construction record post (the Projektakte in Teamanda) takes text and, optionally, files
+from the input item's binary fields, named comma-separated in `Input Binary Fields`. Images,
+PDFs, and office documents of up to 25 MB each, 100 MB per post, are accepted. The post is
+authored by the employee who created the API key. The organization needs the Projektakte
+module, and the API key needs the Create Construction Record Posts permission. Finding and
+creating projects needs the Manage Projects permission. Set an idempotency key, such as an
+email's Message-ID, so a retried execution does not post twice. When the API rejects a post (unknown project, disallowed file type, file too large,
+missing access), the node fails with the API's reason; turn on `Continue (using error output)`
+to branch on it.
+
 Replacing an employment contract sends every field, so settings left out of Additional Fields
 are removed. Absence and work time settings are entered as JSON in the API's shape. Messages
 carry an idempotency key, by default built from the execution, node, run, and item, so
@@ -96,6 +107,10 @@ parameter that Teamanda renames fails the build.
 - [Monitor fire safety training](https://github.com/falcondev-it/n8n-nodes-teamanda/blob/dev/examples/fire-safety-training.workflow.json):
   creates a Teamanda task every day for each active employee whose last fire safety training
   is older than 6 months. Import the file in n8n and follow the setup steps in its sticky note.
+- [File emails in the construction record](https://github.com/falcondev-it/n8n-nodes-teamanda/blob/dev/examples/email-to-construction-record.workflow.json):
+  reads incoming emails, finds the project by the number in the subject, and posts the email
+  text and attachments to its construction record. The sender gets an email with the reason
+  when the subject has no project number, no project has it, or Teamanda rejects the post.
 
 ## Resources
 

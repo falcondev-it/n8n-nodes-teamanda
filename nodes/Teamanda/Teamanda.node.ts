@@ -2,6 +2,7 @@ import { NodeConnectionTypes, type INodeType, type INodeTypeDescription } from '
 import { listSearch, loadOptions } from './loadOptions';
 import { absenceDescription } from './resources/absence';
 import { attendanceDescription } from './resources/attendance';
+import { constructionRecordPostDescription } from './resources/constructionRecordPost';
 import { costCenterDescription } from './resources/costCenter';
 import { dailyReportDescription } from './resources/dailyReport';
 import { employeeDescription } from './resources/employee';
@@ -28,6 +29,7 @@ import { toOptions } from './api';
 const resourceOptions = toOptions<ResourceName>({
 	absence: 'Absence',
 	attendance: 'Attendance',
+	constructionRecordPost: 'Construction Record Post',
 	costCenter: 'Cost Center',
 	dailyReport: 'Daily Report',
 	employee: 'Employee',
@@ -84,6 +86,7 @@ export class Teamanda implements INodeType {
 			},
 			...absenceDescription,
 			...attendanceDescription,
+			...constructionRecordPostDescription,
 			...costCenterDescription,
 			...dailyReportDescription,
 			...employeeDescription,

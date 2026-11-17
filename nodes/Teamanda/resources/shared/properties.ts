@@ -19,6 +19,7 @@ import type { ListSearchMethod, LoadOptionsMethod } from '../../loadOptions';
 export type ResourceName =
 	| 'absence'
 	| 'attendance'
+	| 'constructionRecordPost'
 	| 'costCenter'
 	| 'dailyReport'
 	| 'employee'

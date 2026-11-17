@@ -1,0 +1,286 @@
+{
+	"name": "Teamanda: File emails in the construction record",
+	"nodes": [
+		{
+			"parameters": {
+				"content": "## File emails in the construction record\nPosts each incoming email, with its attachments, to the construction record (Projektakte) of the project whose number is in the subject in square brackets, e.g. `[2026-014] Delivery note`. The sender gets an email with the reason when the subject has no project number, no project has that number, or Teamanda rejects the post. Other API errors fail the execution.\n\n**Setup**\n1. Select your IMAP account in **Incoming Email** and your SMTP account in both reply nodes\n2. Select your Teamanda credentials in **Find Project** and **Create Post**. The API key needs the Manage Projects and Create Construction Record Posts permissions; posts are authored by the employee who created it\n3. Set the sender address in both reply nodes\n4. To accept emails only from known senders or with a password in the subject, add the check to **Read Project Number**",
+				"height": 400,
+				"width": 460
+			},
+			"id": "0c1f6a52-8f43-4b8e-9d1a-3e7b2c5d9a01",
+			"name": "Sticky Note",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [-1840, 560]
+		},
+		{
+			"parameters": {
+				"format": "resolved",
+				"options": {}
+			},
+			"id": "4a7d2e19-6b3c-4f05-8e21-9c0d1b2a3f42",
+			"name": "Incoming Email",
+			"type": "n8n-nodes-base.emailReadImap",
+			"typeVersion": 2,
+			"position": [-1328, 944]
+		},
+		{
+			"parameters": {
+				"mode": "runOnceForEachItem",
+				"jsCode": "// The project number is the text in square brackets in the subject, e.g. \"[2026-014] Delivery note\".\nconst subject = $json.subject ?? '';\nconst match = subject.match(/\\[([^\\]]+)\\]/);\nconst binary = $input.item.binary ?? {};\n\nreturn {\n  json: {\n    projectNumber: match ? match[1].trim() : '',\n    subject,\n    sender: $json.from?.value?.[0]?.address ?? '',\n    text: $json.text || subject,\n    messageId: $json.messageId ?? '',\n    attachmentFields: Object.keys(binary).join(', '),\n  },\n  binary,\n};"
+			},
+			"id": "b8e3f0a4-2d6c-4a19-b7e5-0f1c2d3e4a53",
+			"name": "Read Project Number",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [-1104, 944]
+		},
+		{
+			"parameters": {
+				"conditions": {
+					"options": {
+						"caseSensitive": true,
+						"leftValue": "",
+						"typeValidation": "loose",
+						"version": 2
+					},
+					"conditions": [
+						{
+							"id": "9c8b7a6d-5e4f-4a3b-8c2d-1e0f9a8b7c61",
+							"leftValue": "={{ $json.projectNumber }}",
+							"rightValue": "",
+							"operator": {
+								"type": "string",
+								"operation": "notEmpty",
+								"singleValue": true
+							}
+						}
+					],
+					"combinator": "and"
+				},
+				"options": {}
+			},
+			"id": "7d6c5b4a-3f2e-4d1c-9b0a-8f7e6d5c4b32",
+			"name": "Has Project Number?",
+			"type": "n8n-nodes-base.if",
+			"typeVersion": 2.2,
+			"position": [-880, 944]
+		},
+		{
+			"parameters": {
+				"resource": "project",
+				"operation": "getAll",
+				"limit": 1,
+				"filters": {
+					"customId": "={{ $json.projectNumber }}"
+				},
+				"sort": {},
+				"requestOptions": {}
+			},
+			"id": "c2a9d1e7-5f3b-4c68-a0d4-1e2f3a4b5c64",
+			"name": "Find Project",
+			"type": "@falcondev-it/n8n-nodes-teamanda.teamanda",
+			"typeVersion": 1,
+			"position": [-656, 944],
+			"credentials": {
+				"teamandaApi": {
+					"name": "Teamanda account"
+				}
+			},
+			"alwaysOutputData": true
+		},
+		{
+			"parameters": {
+				"jsCode": "// Find Project outputs only the projects it found, so pair each email with its project here.\nconst projects = $input.all().map((item) => item.json).filter((project) => project.id);\n\nreturn $('Has Project Number?').all(0).map((email) => ({\n  json: {\n    ...email.json,\n    projectId: projects.find((project) => project.customId === email.json.projectNumber)?.id ?? '',\n  },\n  binary: email.binary,\n}));"
+			},
+			"id": "0a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c97",
+			"name": "Match Project",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [-432, 944]
+		},
+		{
+			"parameters": {
+				"conditions": {
+					"options": {
+						"caseSensitive": true,
+						"leftValue": "",
+						"typeValidation": "loose",
+						"version": 2
+					},
+					"conditions": [
+						{
+							"id": "e5b7c3d1-9a2f-4e80-b6c4-2d3e4f5a6b75",
+							"leftValue": "={{ $json.projectId }}",
+							"rightValue": "",
+							"operator": {
+								"type": "string",
+								"operation": "notEmpty",
+								"singleValue": true
+							}
+						}
+					],
+					"combinator": "and"
+				},
+				"options": {}
+			},
+			"id": "f1c4e2b8-3a5d-4b97-c8e1-3f4a5b6c7d86",
+			"name": "Project Found?",
+			"type": "n8n-nodes-base.if",
+			"typeVersion": 2.2,
+			"position": [-208, 944]
+		},
+		{
+			"parameters": {
+				"resource": "constructionRecordPost",
+				"projectId": {
+					"__rl": true,
+					"mode": "id",
+					"value": "={{ $json.projectId }}"
+				},
+				"text": "={{ $json.text }}",
+				"binaryPropertyNames": "={{ $json.attachmentFields }}",
+				"additionalFields": {
+					"idempotencyKey": "={{ $json.messageId }}"
+				},
+				"requestOptions": {}
+			},
+			"id": "1b2c3d4e-6f7a-4b8c-9d0e-1f2a3b4c5da8",
+			"name": "Create Post",
+			"type": "@falcondev-it/n8n-nodes-teamanda.teamanda",
+			"typeVersion": 1,
+			"position": [16, 832],
+			"credentials": {
+				"teamandaApi": {
+					"name": "Teamanda account"
+				}
+			},
+			"onError": "continueErrorOutput"
+		},
+		{
+			"parameters": {
+				"fromEmail": "projektakte@example.com",
+				"toEmail": "={{ $json.sender }}",
+				"subject": "=Not filed: {{ $json.subject }}",
+				"emailFormat": "text",
+				"text": "={{ $json.projectNumber ? 'Your email could not be filed: no project has the number \"' + $json.projectNumber + '\".' : 'Your email could not be filed: the subject has no project number.' }} Put the project number in square brackets in the subject, e.g. [2026-014], and send it again.",
+				"options": {}
+			},
+			"id": "2c3d4e5f-7a8b-4c9d-a0e1-2f3a4b5c6eb9",
+			"name": "Reply: Project Not Found",
+			"type": "n8n-nodes-base.emailSend",
+			"typeVersion": 2.1,
+			"position": [16, 1056]
+		},
+		{
+			"parameters": {
+				"fromEmail": "projektakte@example.com",
+				"toEmail": "={{ $('Project Found?').item.json.sender }}",
+				"subject": "=Not filed: {{ $('Project Found?').item.json.subject }}",
+				"emailFormat": "text",
+				"text": "=Your email could not be filed in project {{ $('Project Found?').item.json.projectNumber }}: {{ $json.error }}",
+				"options": {}
+			},
+			"id": "3d4e5f6a-8b9c-4d0e-b1f2-3a4b5c6d7fca",
+			"name": "Reply: Post Rejected",
+			"type": "n8n-nodes-base.emailSend",
+			"typeVersion": 2.1,
+			"position": [240, 944]
+		}
+	],
+	"connections": {
+		"Incoming Email": {
+			"main": [
+				[
+					{
+						"node": "Read Project Number",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Read Project Number": {
+			"main": [
+				[
+					{
+						"node": "Has Project Number?",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Find Project": {
+			"main": [
+				[
+					{
+						"node": "Match Project",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Project Found?": {
+			"main": [
+				[
+					{
+						"node": "Create Post",
+						"type": "main",
+						"index": 0
+					}
+				],
+				[
+					{
+						"node": "Reply: Project Not Found",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Create Post": {
+			"main": [
+				[],
+				[
+					{
+						"node": "Reply: Post Rejected",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Has Project Number?": {
+			"main": [
+				[
+					{
+						"node": "Find Project",
+						"type": "main",
+						"index": 0
+					}
+				],
+				[
+					{
+						"node": "Reply: Project Not Found",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Match Project": {
+			"main": [
+				[
+					{
+						"node": "Project Found?",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"pinData": {}
+}
