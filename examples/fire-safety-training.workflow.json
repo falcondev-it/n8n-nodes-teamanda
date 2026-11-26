@@ -3,7 +3,7 @@
 	"nodes": [
 		{
 			"parameters": {
-				"content": "## Monitor fire safety training\nCreates a Teamanda task every day when an active employee's last fire safety training is older than 6 months.\n\n**Setup**\n1. Select your Teamanda credentials in all Teamanda nodes\n2. In **Create Task**, choose the category and assignee\n3. In **Get Open Fire Safety Tasks**, set the category filter to the same category as in **Create Task**\n4. Set the key of the employee field holding the training date in **Get Employees** and as `FIELD_TRAINING` in the Code node",
+				"content": "## Monitor fire safety training\nCreates a Teamanda task every day when an active employee's last fire safety training is older than 6 months.\n\n**Setup**\n1. Select your Teamanda credentials in all Teamanda nodes\n2. In **Create Task**, choose the category and assignees\n3. In **Get Open Fire Safety Tasks**, set the category filter to the same category as in **Create Task**\n4. Set the key of the employee field holding the training date in **Get Employees** and as `FIELD_TRAINING` in the Code node",
 				"height": 320,
 				"width": 420
 			},
@@ -128,11 +128,7 @@
 					"value": "",
 					"mode": "list"
 				},
-				"assignedUserId": {
-					"__rl": true,
-					"value": "",
-					"mode": "list"
-				},
+				"assignedUserIds": [],
 				"additionalFields": {
 					"description": "={{ $json.description }}"
 				},
@@ -149,7 +145,7 @@
 				}
 			},
 			"onError": "continueErrorOutput",
-			"notes": "Choose Category and Assignee",
+			"notes": "Choose Category and Assignees",
 			"notesInFlow": true
 		},
 		{

@@ -28,10 +28,10 @@ const categoryField: INodeProperties = {
 	...locator('searchTaskCategories'),
 };
 
-const assigneeField: INodeProperties = {
-	displayName: 'Assignee',
-	name: 'assignedUserId',
-	...locator('searchEmployees'),
+const assigneesField: INodeProperties = {
+	displayName: 'Assignee Names or IDs',
+	name: 'assignedUserIds',
+	...multiDropdown('getEmployees'),
 };
 
 export const taskDescription: INodeProperties[] = [
@@ -51,7 +51,7 @@ export const taskDescription: INodeProperties[] = [
 			'taskNumber',
 			'title',
 			'status',
-			'assignedUserId',
+			'assignedUserIds',
 			'categoryId',
 			'plannedAt',
 			'description',
@@ -77,9 +77,10 @@ export const taskDescription: INodeProperties[] = [
 					categoryId: this.getNodeParameter('categoryId', undefined, {
 						extractValue: true,
 					}) as string,
-					assignedUserId: this.getNodeParameter('assignedUserId', undefined, {
-						extractValue: true,
-					}) as string,
+					// The generated type reads the spec's non-empty array as a one-element tuple.
+					assignedUserIds: this.getNodeParameter(
+						'assignedUserIds',
+					) as Body<'createTask'>['assignedUserIds'],
 					description: (additionalFields.description as string) || null,
 					plannedAt: plannedAt ? toUtc(plannedAt, this.getTimezone()) : null,
 				};
@@ -95,7 +96,7 @@ export const taskDescription: INodeProperties[] = [
 		displayOptions: { show: showOnlyForCreate },
 	},
 	{ ...categoryField, required: true, displayOptions: { show: showOnlyForCreate } },
-	{ ...assigneeField, required: true, displayOptions: { show: showOnlyForCreate } },
+	{ ...assigneesField, required: true, displayOptions: { show: showOnlyForCreate } },
 	{
 		displayName: 'Additional Fields',
 		name: 'additionalFields',
@@ -152,7 +153,7 @@ export const taskDescription: INodeProperties[] = [
 				default: '',
 				routing: { send: { type: 'body', property: 'title' } },
 			},
-			{ ...assigneeField, routing: { send: { type: 'body', property: 'assignedUserId' } } },
+			{ ...assigneesField, routing: { send: { type: 'body', property: 'assignedUserIds' } } },
 		],
 	},
 	filterProperties('task', [
