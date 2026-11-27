@@ -54,8 +54,9 @@ community nodes documentation and install the package `@falcondev-it/n8n-nodes-t
 - Time Entry: Create, Delete, Get, Get Many
 
 Single employees, resources, tasks, task categories, projects, tags, and cost centers are picked
-from a list or entered by ID. Teams, work types, employee fields, and the projects of a new tag
-are offered as dropdowns loaded from the API.
+from a list or entered by ID. Teams, work types, employee fields, the projects of a new tag, and
+the assignees of a task are offered as dropdowns loaded from the API. A task can have several
+assignees; setting them in Update replaces all current assignees.
 
 ## Credentials
 
